@@ -1,0 +1,8 @@
+.git
+.idea
+target/*
+!target/School_Check-0.0.1-SNAPSHOT.jar
+*.iml
+boot-run.log
+tmp-login.json
+src/main/resources/static/.git

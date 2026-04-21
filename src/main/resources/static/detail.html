@@ -1,0 +1,101 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>巡查详情 - SWPU-NCIC</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/detail.css">
+    <link rel="stylesheet" href="css/ai-character.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon"><i class="fas fa-server"></i></div>
+                    <div class="logo-text">
+                        <h1>数据中心巡检管理系统</h1>
+                        <p>西南石油大学 · 网络与信息化中心</p>
+                    </div>
+                </div>
+                <div class="swpuUser-info">
+                    <div class="swpuUser-avatar">巡</div>
+                    <div class="swpuUser-details">
+                        <div class="swpuUser-name">巡检人员</div>
+                        <div class="swpuUser-role">巡检工程师</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <a href="index.html" class="back-button"><i class="fas fa-arrow-left"></i> 返回列表</a>
+
+        <div class="detail-header">
+            <h1 class="detail-title" id="ncicRoom-name">机房名称</h1>
+            <div class="status-badge" id="ncicRoom-current-status">未检查</div>
+        </div>
+
+        <div class="ncicRoom-guide-card" id="ncicRoom-guide-container" style="display:none;">
+            <div class="guide-header"><i class="fas fa-info-circle"></i> 巡查指南与设备信息</div>
+            <div class="guide-body" id="ncicRoom-guide-content"></div>
+        </div>
+
+        <div class="detail-content">
+            <div class="dailyPatrol-form">
+                <h3 class="form-title">巡查记录提交</h3>
+                <div class="form-group">
+                    <label class="form-label">巡查状态</label>
+                    <div class="status-options">
+                        <div class="status-option" data-status="normal"><i class="fas fa-check-circle"></i><br>正常</div>
+                        <div class="status-option" data-status="warning"><i class="fas fa-exclamation-triangle"></i><br>警告</div>
+                        <div class="status-option" data-status="error"><i class="fas fa-times-circle"></i><br>异常</div>
+                    </div>
+                    <input type="hidden" id="dailyPatrol-status" value="">
+                </div>
+                <div class="form-group"><label class="form-label">巡查备注</label><textarea class="form-control" id="dailyPatrol-notes" rows="4" placeholder="请输入巡查备注..."></textarea></div>
+                <div class="form-group">
+                    <label class="form-label">富文本说明</label>
+                    <div id="rt-toolbar" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+                        <button type="button" class="rt-btn" data-cmd="bold">B</button>
+                        <button type="button" class="rt-btn" data-cmd="italic">I</button>
+                        <button type="button" class="rt-btn" data-cmd="underline">U</button>
+                        <button type="button" class="rt-btn" data-cmd="insertUnorderedList"><i class="fas fa-list-ul"></i></button>
+                        <button type="button" class="rt-btn" data-cmd="insertOrderedList"><i class="fas fa-list-ol"></i></button>
+                    </div>
+                    <div id="rich-editor" contenteditable="true" class="form-control" style="min-height:140px; padding:10px; overflow:auto;"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">上传照片/截图</label>
+                    <div class="file-upload" id="file-upload-area">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>点击或拖拽上传图片</p>
+                        <p class="upload-hint">支持 JPG、PNG，单张不超过 5MB</p>
+                        <input type="file" id="file-input" accept="image/*" multiple style="display:none;">
+                    </div>
+                    <div class="uploaded-images" id="uploaded-images"></div>
+                </div>
+                <button class="submit-btn" id="submit-dailyPatrol" type="button"><i class="fas fa-paper-plane"></i> 提交巡查记录</button>
+            </div>
+
+            <div class="dailyPatrol-history">
+                <h3 class="history-title">巡查历史记录</h3>
+                <div id="history-list">
+                    <div class="empty-history" id="empty-history"><i class="fas fa-history"></i><p>暂无巡检记录</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="image-modal" id="image-modal">
+        <span class="modal-close" id="modal-close">&times;</span>
+        <img class="modal-image" id="modal-image" src="" alt="预览图片">
+    </div>
+
+    <script src="js/swpu-shared.js"></script>
+    <script src="js/detail.js"></script>
+    <script src="js/ai-character.js"></script>
+</body>
+</html>

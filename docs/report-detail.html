@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人员巡检明细 - 数据中心巡检系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/admin.css?v=20260311_3">
+    <style>
+        body { background: #f5f7fa; }
+        .report-page { padding: 24px; }
+        .report-page .page-top { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+        .report-page .page-top a { text-decoration:none; }
+        .report-meta { display:flex; flex-wrap:wrap; gap:16px 24px; margin-bottom:16px; color:#344054; font-size:14px; }
+    </style>
+</head>
+<body>
+    <div class="report-page">
+        <div class="page-top">
+            <a href="admin.html?page=reports" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> 返回统计报表</a>
+            <div class="date-display"><i class="far fa-calendar-alt"></i><span id="report-current-date"></span></div>
+        </div>
+        <div id="report-detail-container" class="table-card">
+            <div class="loading">加载中...</div>
+        </div>
+    </div>
+    <div id="notification" class="notification"></div>
+    <script src="js/api.js?v=20260307_4"></script>
+    <script src="js/report-detail.js?v=20260311_2"></script>
+</body>
+</html>

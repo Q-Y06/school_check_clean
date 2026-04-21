@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的巡检历史</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/inspection-history.css?v=20260313_04">
+</head>
+<body>
+    <div class="history-shell">
+        <header class="history-header">
+            <div>
+                <a class="back-link" href="index.html"><i class="fas fa-arrow-left"></i>返回主页</a>
+                <h1>我的巡检历史</h1>
+                <p>按时间、机房和状态快速查看个人巡检记录。</p>
+            </div>
+            <div class="user-box">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div>
+                    <div class="user-name" id="userName">用户</div>
+                    <div class="user-role" id="userRole">巡检人员</div>
+                </div>
+            </div>
+        </header>
+
+        <section class="toolbar-card">
+            <div class="search-box"><i class="fas fa-search"></i><input id="keywordInput" type="text" placeholder="搜索机房、备注或巡检详情"></div>
+            <div class="toolbar-actions">
+                <select id="roomFilter"><option value="">全部机房</option></select>
+                <select id="statusFilter"><option value="">全部状态</option><option value="normal">正常</option><option value="warning">警告</option><option value="error">异常</option><option value="unchecked">未巡检</option></select>
+                <input class="date-input" id="dateFilter" type="date">
+                <button class="secondary-btn" id="resetBtn" type="button">重置</button>
+                <button class="primary-btn" id="refreshBtn" type="button">刷新</button>
+            </div>
+        </section>
+
+        <section class="content-grid">
+            <aside class="side-card">
+                <div class="side-block">
+                    <div class="side-title">状态筛选</div>
+                    <div class="status-list" id="statusList"></div>
+                </div>
+                <div class="side-block">
+                    <div class="side-title">巡检概览</div>
+                    <div class="summary-list" id="summaryList"></div>
+                </div>
+            </aside>
+            <main class="main-card">
+                <div class="main-header">
+                    <div>
+                        <h2>巡检记录</h2>
+                        <p id="resultSummary">加载中...</p>
+                    </div>
+                </div>
+                <div class="history-list" id="historyList"></div>
+                <div class="pagination-bar" id="historyPagination"></div>
+                <div class="empty-state" id="emptyState" style="display:none;"><i class="fas fa-clipboard-list"></i><p>暂无符合条件的巡检记录</p></div>
+            </main>
+        </section>
+    </div>
+
+    <div class="detail-modal" id="detailModal">
+        <div class="detail-dialog">
+            <div class="detail-header">
+                <div>
+                    <h3 id="detailTitle">巡检详情</h3>
+                    <p id="detailMeta"></p>
+                </div>
+                <button class="detail-close" id="detailClose" type="button">×</button>
+            </div>
+            <div class="detail-tags" id="detailTags"></div>
+            <div class="detail-content" id="detailContent"></div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/inspection-history.js?v=20260313_04"></script>
+</body>
+</html>
+

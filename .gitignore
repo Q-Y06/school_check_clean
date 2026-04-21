@@ -1,0 +1,9 @@
+target/
+upload/
+*.log
+.env
+.idea/
+.vscode/
+*.iml
+tmp-*.json
+src/main/resources/static/.git_backup_static_repo/

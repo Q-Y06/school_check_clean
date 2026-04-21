@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>值班表 - 数据中心巡检系统</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/schedule.css?v=20260311_1">
+</head>
+<body>
+  <div class="schedule-page">
+    <header class="schedule-header">
+      <div>
+        <h1>值班表</h1>
+        <p>查看每日值班安排与巡检完成情况</p>
+      </div>
+      <div class="schedule-header-actions">
+        <a href="index.html" class="header-btn"><i class="fas fa-home"></i>返回首页</a>
+      </div>
+    </header>
+
+    <main class="schedule-main">
+      <section class="calendar-card">
+        <div class="calendar-topbar">
+          <button id="prev-month" class="mini-btn">上一月</button>
+          <div id="month-label" class="month-label"></div>
+          <button id="next-month" class="mini-btn">下一月</button>
+          <button id="today-btn" class="mini-btn primary">今天</button>
+        </div>
+        <div class="week-head">
+          <span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>周日</span>
+        </div>
+        <div id="calendar-grid" class="calendar-grid"></div>
+      </section>
+
+      <section class="detail-card">
+        <div class="detail-head">
+          <h2 id="detail-title">当天值班安排</h2>
+          <span id="detail-status" class="detail-status"></span>
+        </div>
+        <div id="detail-list" class="detail-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/schedule.js?v=20260311_1"></script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: school-check-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_PASSWORD:-2667076913}
+      MYSQL_DATABASE: school_check
+      TZ: Asia/Shanghai
+    ports:
+      - "3307:3306"
+    volumes:
+      - school-check-mysql-data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_PASSWORD:-2667076913}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: school-check-redis
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Shanghai
+    ports:
+      - "6379:6379"
+    volumes:
+      - school-check-redis-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: school-check:1.1
+    container_name: school-check-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      MYSQL_URL: jdbc:mysql://mysql:3306/school_check?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      MYSQL_USERNAME: root
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-2667076913}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_DATABASE: 0
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET:-school_check_2026}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_API_URL: ${AI_API_URL:-https://api.deepseek.com/chat/completions}
+      AI_MODEL: ${AI_MODEL:-deepseek-chat}
+      APP_UPLOAD_DIR: /data/school_check/upload
+      UPLOAD_DIR: /data/school_check/upload
+      TZ: Asia/Shanghai
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./upload:/data/school_check/upload
+
+volumes:
+  school-check-mysql-data:
+  school-check-redis-data:

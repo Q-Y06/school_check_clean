@@ -1,0 +1,49 @@
+{
+  "properties": [
+    {
+      "name": "jwt.secret",
+      "type": "java.lang.String",
+      "description": "JWT 签名密钥。"
+    },
+    {
+      "name": "jwt.expire",
+      "type": "java.lang.Long",
+      "description": "访问令牌有效期，单位毫秒。"
+    },
+    {
+      "name": "jwt.refresh-expire",
+      "type": "java.lang.Long",
+      "description": "刷新令牌有效期，单位毫秒。"
+    },
+    {
+      "name": "jwt.header",
+      "type": "java.lang.String",
+      "description": "携带 JWT 的请求头名称。"
+    },
+    {
+      "name": "jwt.issuer",
+      "type": "java.lang.String",
+      "description": "JWT 签发方。"
+    },
+    {
+      "name": "ai.assistant.api-key",
+      "type": "java.lang.String",
+      "description": "AI 助手默认 API Key。"
+    },
+    {
+      "name": "ai.assistant.api-url",
+      "type": "java.lang.String",
+      "description": "AI 助手默认 Chat Completions 接口地址。"
+    },
+    {
+      "name": "ai.assistant.model",
+      "type": "java.lang.String",
+      "description": "AI 助手默认模型名称。"
+    },
+    {
+      "name": "app.upload-dir",
+      "type": "java.lang.String",
+      "description": "系统统一上传目录，用于图片、设备文档等持久化文件。"
+    }
+  ]
+}

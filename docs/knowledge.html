@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>故障知识库 - 数据中心巡检系统</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/knowledge.css?v=20260314_02">
+</head>
+<body>
+    <div class="knowledge-shell">
+        <header class="knowledge-header">
+            <div>
+                <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> 返回主页</a>
+                <h1>故障知识库</h1>
+                <p>面向巡检人员和普通用户的知识查询页面，支持关键字、标签和设备类型筛选，也支持在线上传知识。</p>
+            </div>
+            <div class="user-box">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div>
+                    <div class="user-name" id="userName">用户</div>
+                    <div class="user-role" id="userRole">知识库查询用户</div>
+                </div>
+            </div>
+        </header>
+
+        <section class="toolbar-card">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="keywordInput" placeholder="搜索标题、标签、内容">
+            </div>
+            <div class="toolbar-actions">
+                <select id="deviceTypeFilter"><option value="">全部设备类型</option></select>
+                <select id="tagFilter"><option value="">全部标签</option></select>
+                <button class="secondary-btn" id="resetBtn" type="button">清空筛选</button>
+                <button class="secondary-btn" id="uploadBtn" type="button"><i class="fas fa-cloud-arrow-up"></i> 上传知识</button>
+                <button class="primary-btn" id="refreshBtn" type="button">刷新</button>
+            </div>
+        </section>
+
+        <section class="content-grid">
+            <aside class="side-card">
+                <div class="side-block">
+                    <div class="side-title">标签导航</div>
+                    <div class="tag-list" id="tagList"></div>
+                </div>
+                <div class="side-block">
+                    <div class="side-title">设备类型</div>
+                    <div class="type-list" id="typeList"></div>
+                </div>
+            </aside>
+            <main class="main-card">
+                <div class="main-header">
+                    <div>
+                        <h2>知识条目</h2>
+                        <p id="resultSummary">加载中...</p>
+                    </div>
+                </div>
+                <div class="knowledge-list" id="knowledgeList"></div>
+                <div class="pagination-bar" id="knowledgePagination"></div>
+                <div class="empty-state" id="emptyState" style="display:none;"><i class="fas fa-book-open"></i><p>暂无符合条件的知识记录</p></div>
+            </main>
+        </section>
+    </div>
+
+    <div class="detail-modal" id="detailModal">
+        <div class="detail-dialog">
+            <div class="detail-header">
+                <div>
+                    <h3 id="detailTitle">知识详情</h3>
+                    <p id="detailMeta">-</p>
+                </div>
+                <button class="detail-close" id="detailClose" type="button">×</button>
+            </div>
+            <div class="detail-tags" id="detailTags"></div>
+            <div class="detail-content" id="detailContent"></div>
+            <section class="comment-panel">
+                <div class="comment-panel-header">
+                    <h4>留言交流</h4>
+                    <span id="commentSummary">暂无留言</span>
+                </div>
+                <div class="comment-list" id="detailComments"></div>
+                <div class="pagination-bar comment-pagination" id="commentPagination"></div>
+                <form id="commentForm" class="comment-form">
+                    <textarea id="commentInput" rows="3" maxlength="500" placeholder="输入你的处理经验、补充说明或提问内容"></textarea>
+                    <div class="comment-actions">
+                        <span class="comment-tip">留言会同步保存到系统，登录用户都可以查看。</span>
+                        <button class="primary-btn" type="submit">发布留言</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+
+    <div class="detail-modal" id="uploadModal">
+        <div class="detail-dialog upload-dialog">
+            <div class="detail-header">
+                <div>
+                    <h3>上传知识</h3>
+                    <p>普通用户和巡检人员都可以补充经验，提交后会直接进入知识库。</p>
+                </div>
+                <button class="detail-close" id="uploadClose" type="button">×</button>
+            </div>
+            <form id="knowledgeUploadForm" class="upload-form">
+                <div class="upload-grid">
+                    <label class="upload-field"><span>知识标题</span><input type="text" name="title" maxlength="80" required></label>
+                    <label class="upload-field"><span>设备类型</span><select name="deviceType"><option value="服务器">服务器</option><option value="网络设备">网络设备</option><option value="UPS">UPS</option><option value="空调">空调</option><option value="消防">消防</option><option value="其他">其他</option></select></label>
+                </div>
+                <div class="upload-grid">
+                    <label class="upload-field"><span>故障分类</span><select name="type"><option value="通用故障">通用故障</option><option value="排查经验">排查经验</option><option value="处理方案">处理方案</option><option value="注意事项">注意事项</option></select></label>
+                    <label class="upload-field"><span>标签</span><input type="text" name="tags" placeholder="多个标签用英文逗号分隔"></label>
+                </div>
+                <label class="upload-field"><span>知识内容</span><textarea name="content" rows="8" maxlength="3000" required placeholder="请输入故障现象、排查步骤、处理方法等内容"></textarea></label>
+                <div class="upload-actions"><button class="secondary-btn" id="uploadCancel" type="button">取消</button><button class="primary-btn" type="submit">提交知识</button></div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/knowledge.js?v=20260314_02"></script>
+</body>
+</html>

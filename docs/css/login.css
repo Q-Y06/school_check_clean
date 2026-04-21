@@ -1,0 +1,446 @@
+/* 认证页面通用样式 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.auth-container {
+    display: flex;
+    justify-content: center;
+    max-width: 1200px;
+    width: 100%;
+}
+
+/* 认证卡片 */
+.auth-card {
+    padding: 50px 40px;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    max-width: 500px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.logo i {
+    font-size: 36px;
+    color: #1a237e;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.logo h1 {
+    font-size: 28px;
+    color: #1a237e;
+    font-weight: 700;
+}
+
+.subtitle {
+    color: #666;
+    font-size: 16px;
+    margin-top: 5px;
+}
+
+/* 表单样式 */
+.auth-form {
+    margin-bottom: 30px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.form-label i {
+    color: #667eea;
+    width: 20px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-check-input {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.form-check-input:checked::before {
+    content: '\2713';
+    display: block;
+    color: white;
+    text-align: center;
+    font-size: 12px;
+    line-height: 14px;
+}
+
+.form-check-label {
+    color: #666;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+/* 按钮样式 */
+.btn {
+    padding: 14px 28px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-primary {
+    background: linear-gradient(to right, #667eea, #764ba2);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(to right, #5a6fd8, #6a4190);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-block {
+    width: 100%;
+    margin-top: 10px;
+}
+
+/* 认证页脚 */
+.auth-footer {
+    text-align: center;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.auth-footer p {
+    color: #666;
+    font-size: 14px;
+}
+
+.auth-footer a {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-footer a:hover {
+    text-decoration: underline;
+}
+
+/* 演示账户 */
+.demo-accounts {
+    margin: 30px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #eef2ff 100%);
+    border-radius: 12px;
+}
+
+.demo-accounts h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    color: #1a237e;
+    font-size: 18px;
+}
+
+.demo-accounts h3 i {
+    color: #667eea;
+}
+
+.demo-account-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.demo-account {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.demo-account:hover {
+    transform: translateX(5px);
+    border-color: #667eea;
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+}
+
+.demo-role {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.demo-role.admin {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+}
+
+.demo-role.engineer {
+    background: rgba(76, 175, 80, 0.1);
+    color: #2E7D32;
+}
+
+.demo-role.viewer {
+    background: rgba(255, 152, 0, 0.1);
+    color: #F57C00;
+}
+
+.demo-credentials {
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    color: #666;
+    background: #f8f9fa;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+/* 快速统计 */
+.quick-stats {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 10px;
+}
+
+.stat-item i {
+    font-size: 24px;
+    color: #667eea;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-number {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a237e;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #666;
+}
+
+/* 消息提示 */
+.message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.message.success {
+    background: linear-gradient(to right, #4CAF50, #2E7D32);
+}
+
+.message.error {
+    background: linear-gradient(to right, #f44336, #c62828);
+}
+
+.message.warning {
+    background: linear-gradient(to right, #FF9800, #F57C00);
+}
+
+.message.info {
+    background: linear-gradient(to right, #2196F3, #1976D2);
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+/* 加载动画 */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    color: #667eea;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 响应式设计 */
+@media (max-width: 576px) {
+    .auth-card {
+        padding: 30px 20px;
+    }
+    
+    .logo {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .logo h1 {
+        font-size: 24px;
+    }
+    
+    .quick-stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .demo-account {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .demo-credentials {
+        align-self: stretch;
+        text-align: center;
+    }
+}
+
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 14px 16px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 10px 24px rgba(0,0,0,.12);
+    z-index: 1200;
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}

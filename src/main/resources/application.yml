@@ -1,0 +1,95 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${MYSQL_URL:jdbc:mysql://localhost:3307/school_check?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:2667076913}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      timeout: 3s
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: 3s
+  servlet:
+    multipart:
+      # Max size for one uploaded file.
+      max-file-size: 10MB
+      # Max size for one multipart request.
+      max-request-size: 50MB
+      # Temporary directory for multipart uploads.
+      location: ./temp
+      enabled: true
+  web:
+    resources:
+      # Static resource locations for packaged files and local override files.
+      static-locations: classpath:/static/,file:./static/
+      cache:
+        # Disable static resource cache in development.
+        period: 0
+
+debug: false
+
+app:
+  # Unified upload directory. Docker should override this with APP_UPLOAD_DIR.
+  upload-dir: ${APP_UPLOAD_DIR:${UPLOAD_DIR:./upload}}
+
+logging:
+  level:
+    sc.school_check: info
+    com.baomidou.mybatisplus: info
+    org.springframework: info
+    org.springframework.jdbc: info
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{50} - %msg%n"
+
+mybatis-plus:
+  # Mapper XML scan path.
+  mapper-locations: classpath:mybatis/mapper/**/*.xml
+  # Domain model package.
+  type-aliases-package: sc.school_check.domain.model
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    cache-enabled: false
+    call-setters-on-nulls: true
+
+jwt:
+  # JWT signing secret. Override this with JWT_SECRET in production.
+  secret: ${JWT_SECRET:school_check_2026}
+  # Access token lifetime in milliseconds.
+  expire: 7200000
+  # Refresh token lifetime in milliseconds.
+  refresh-expire: 86400000
+  # Token header name.
+  header: Authorization
+  issuer: school_check
+
+ai:
+  assistant:
+    # OpenAI-compatible chat completions configuration.
+    # System settings in the admin page can override these defaults.
+    api-key: ${AI_API_KEY:}
+    api-url: ${AI_API_URL:https://api.deepseek.com/chat/completions}
+    model: ${AI_MODEL:deepseek-chat}
