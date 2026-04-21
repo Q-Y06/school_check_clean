@@ -18,6 +18,11 @@ CREATE TABLE IF NOT EXISTS sys_user (
     INDEX idx_sys_user_deleted (is_deleted)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+INSERT IGNORE INTO sys_user
+(username, password, full_name, department, employee_id, email, phone, role, status)
+VALUES
+('admin', 'password123', '管理员', '网络与信息化中心', 'admin001', 'admin@example.com', '18113190179', 'admin', 1);
+
 CREATE TABLE IF NOT EXISTS room (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(120) NOT NULL,
