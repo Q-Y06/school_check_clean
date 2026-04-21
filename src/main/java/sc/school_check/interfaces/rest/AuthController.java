@@ -80,7 +80,7 @@ public class AuthController {
             throw new BusinessException(404, "用户未注册");
         }
 
-        if (!passwordEncoder.matches(password.trim(), user.getPassword())) {
+        if (!matchesPassword(password.trim(), user)) {
             throw new BusinessException(401, "密码错误");
         }
 
@@ -93,7 +93,14 @@ public class AuthController {
         Map<String, Object> userInfo = new HashMap<>();
         userInfo.put("userId", user.getId());
         userInfo.put("username", user.getUsername());
+        userInfo.put("fullName", user.getFullName());
+        userInfo.put("name", user.getFullName());
+        userInfo.put("department", user.getDepartment());
+        userInfo.put("employeeId", user.getEmployeeId());
+        userInfo.put("email", user.getEmail());
+        userInfo.put("phone", user.getPhone());
         userInfo.put("role", user.getRole());
+        userInfo.put("status", user.getStatus());
         userInfo.put("token", token);
 
         return ResponseUtil.success(userInfo);
@@ -122,5 +129,21 @@ public class AuthController {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private boolean matchesPassword(String rawPassword, User user) {
+        String storedPassword = user.getPassword();
+        if (storedPassword == null) {
+            return false;
+        }
+        if (storedPassword.startsWith("$2a$") || storedPassword.startsWith("$2b$") || storedPassword.startsWith("$2y$")) {
+            return passwordEncoder.matches(rawPassword, storedPassword);
+        }
+        if (rawPassword.equals(storedPassword)) {
+            user.setPassword(passwordEncoder.encode(rawPassword));
+            userService.updateById(user);
+            return true;
+        }
+        return false;
     }
 }

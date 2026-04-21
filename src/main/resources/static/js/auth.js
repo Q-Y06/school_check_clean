@@ -1,4 +1,4 @@
-﻿class AuthApp {
+class AuthApp {
     constructor() {
         window.SWPUData.seedData();
         this.bindLoginForm();
@@ -8,22 +8,33 @@
     bindLoginForm() {
         const form = document.getElementById('loginForm');
         if (!form) return;
-        form.addEventListener('submit', (event) => {
+        form.addEventListener('submit', async (event) => {
             event.preventDefault();
             const swpuUsername = document.getElementById('swpuUsername').value.trim();
             const password = document.getElementById('password').value;
-            const swpuUsers = window.SWPUData.getSwpuUsers();
-            const matched = swpuUsers.find((item) => item.swpuUsername === swpuUsername && item.password === password);
-            if (!matched) {
-                this.showMessage('用户名或密码错误', 'error');
-                return;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 登录中...';
             }
-            if (matched.status !== 'active') {
-                this.showMessage('当前账号未激活，请联系管理员', 'warning');
-                return;
+            try {
+                const loginUser = await window.ApiClient.postJson('/api/auth/login', {
+                    username: swpuUsername,
+                    password
+                });
+                const currentUser = this.toSwpuUser(loginUser);
+                localStorage.setItem('token', loginUser.token);
+                localStorage.setItem('user', JSON.stringify(loginUser));
+                window.SWPUData.saveCurrentSwpuUser(currentUser);
+                window.location.href = currentUser.role === 'admin' ? 'admin.html' : 'index.html';
+            } catch (error) {
+                this.showMessage(error.message || '登录失败，请稍后重试', 'error');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> 登录';
+                }
             }
-            window.SWPUData.saveCurrentSwpuUser(matched);
-            window.location.href = matched.role === 'admin' ? 'admin.html' : 'index.html';
         });
     }
 
@@ -67,12 +78,31 @@
         });
     }
 
+    toSwpuUser(loginUser) {
+        const role = loginUser.role || 'engineer';
+        return {
+            id: loginUser.id || `swpuUser_${loginUser.userId}`,
+            userId: loginUser.userId,
+            swpuUsername: loginUser.swpuUsername || loginUser.username,
+            username: loginUser.username,
+            name: loginUser.name || loginUser.fullName || loginUser.username,
+            fullName: loginUser.fullName || loginUser.name || loginUser.username,
+            phone: loginUser.phone || '',
+            email: loginUser.email || '',
+            department: loginUser.department || '',
+            employeeId: loginUser.employeeId || '',
+            role,
+            roles: role === 'admin' ? ['admin'] : ['engineer'],
+            status: Number(loginUser.status) === 1 ? 'active' : 'inactive'
+        };
+    }
+
     showMessage(text, type) {
         const message = document.createElement('div');
         message.className = `notification ${type || 'info'} show`;
         message.innerHTML = `<div class="notification-content"><i class="fas fa-circle-info"></i><span>${text}</span></div>`;
         document.body.appendChild(message);
-        setTimeout(() => message.remove(), 2200);
+        setTimeout(() => message.remove(), 3200);
     }
 }
 
