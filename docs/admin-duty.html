@@ -1,21 +1,100 @@
-<div class="table-card duty-admin-card">
-    <div class="table-header table-toolbar">
-        <div>
-            <h3>值班管理</h3>
-            <div class="table-note">维护每日值班人员，首页“今日值班”会同步读取这里的数据。</div>
+<div class="duty-page">
+    <div class="duty-summary-grid">
+        <div class="duty-summary-card duty-summary-blue">
+            <i class="fas fa-calendar-check"></i>
+            <span>本月排班</span>
+            <strong id="dutyMonthTotal">0</strong>
         </div>
-        <div class="toolbar-actions">
-            <button class="btn btn-secondary-lite" id="dutyPrevMonth" type="button"><i class="fas fa-chevron-left"></i>上月</button>
-            <button class="btn" id="dutyToday" type="button">本月</button>
-            <button class="btn btn-secondary-lite" id="dutyNextMonth" type="button">下月<i class="fas fa-chevron-right"></i></button>
+        <div class="duty-summary-card duty-summary-green">
+            <i class="fas fa-user-clock"></i>
+            <span>今日值班</span>
+            <strong id="dutyTodayPerson">未安排</strong>
+        </div>
+        <div class="duty-summary-card duty-summary-orange">
+            <i class="fas fa-triangle-exclamation"></i>
+            <span>未排天数</span>
+            <strong id="dutyMissingDays">0</strong>
         </div>
     </div>
-    <div class="duty-summary-grid" id="dutySummary"></div>
-    <div class="duty-calendar-shell">
-        <div class="duty-calendar-title" id="dutyCalendarTitle"></div>
-        <div class="duty-calendar-grid duty-weekdays">
-            <span>周日</span><span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span>
+
+    <div class="duty-layout">
+        <div class="table-card duty-calendar-card">
+            <div class="table-header duty-panel-header">
+                <h3>值班排期</h3>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" id="dutyPrevMonth" type="button"><i class="fas fa-chevron-left"></i> 上月</button>
+                    <button class="btn btn-secondary" id="dutyTodayBtn" type="button">本月</button>
+                    <button class="btn btn-secondary" id="dutyNextMonth" type="button">下月 <i class="fas fa-chevron-right"></i></button>
+                    <button class="btn" id="dutyRefreshBtn" type="button"><i class="fas fa-rotate"></i> 刷新</button>
+                </div>
+            </div>
+            <div class="duty-calendar-toolbar">
+                <div>
+                    <div class="duty-month-title" id="dutyMonthTitle"></div>
+                    <p>点击日期即可编辑当天值班安排。</p>
+                </div>
+                <div class="duty-legend">
+                    <span><i class="legend-dot is-duty"></i>已排班</span>
+                    <span><i class="legend-dot is-today"></i>今天</span>
+                    <span><i class="legend-dot is-missing"></i>未排班</span>
+                </div>
+            </div>
+            <div id="dutyCalendar"></div>
         </div>
-        <div class="duty-calendar-grid" id="dutyCalendarGrid"></div>
+
+        <div class="table-card duty-editor-card">
+            <div class="table-header duty-editor-header">
+                <div>
+                    <h3>值班安排</h3>
+                    <p>保存后会同步到首页“今日值班”。</p>
+                </div>
+            </div>
+            <div class="duty-form-grid">
+                <div class="form-group">
+                    <label class="form-label" for="dutyDate">日期</label>
+                    <input class="form-control" type="date" id="dutyDate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="dutyUserSelect">值班人员</label>
+                    <select class="form-control" id="dutyUserSelect"></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="dutyPhone">联系电话</label>
+                    <input class="form-control" type="text" id="dutyPhone" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="dutyNote">值班备注</label>
+                    <textarea class="form-control" id="dutyNote" rows="4" maxlength="200" placeholder="请输入值班备注，最多 200 字"></textarea>
+                </div>
+            </div>
+            <div class="duty-action-row">
+                <button class="btn" id="dutySaveBtn" type="button"><i class="fas fa-save"></i> 保存排班</button>
+                <button class="btn btn-secondary" id="dutyDeleteBtn" type="button"><i class="fas fa-trash"></i> 删除当天</button>
+                <button class="btn btn-secondary" id="dutyResetBtn" type="button"><i class="fas fa-broom"></i> 清空表单</button>
+            </div>
+            <div class="duty-action-row" style="margin-top:12px;">
+                <button class="btn" id="dutyBatchImport" type="button"><i class="fas fa-file-import"></i> 批量导入</button>
+                <input type="file" id="dutyImportInput" accept=".xlsx,.xls,.csv" hidden>
+                <span class="upload-hint">支持 Excel 字段：日期、工号、姓名、手机号、备注</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <div class="table-header">
+            <h3>当月值班表</h3>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>日期</th>
+                    <th>值班人员</th>
+                    <th>手机号</th>
+                    <th>备注</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="dutyTableBody"></tbody>
+        </table>
     </div>
 </div>
