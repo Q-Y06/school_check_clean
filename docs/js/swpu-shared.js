@@ -847,9 +847,25 @@
         const today = getTodayDate();
         const dutyList = fetchSwpuData('ncicDutyList', createDefaultDutyList);
         const swpuUsers = getSwpuUsers();
-        const dutyRecord = dutyList.find((item) => item.date === today);
+        let dutyRecord = dutyList.find((item) => item.date === today);
         if (!dutyRecord) {
-            return null;
+            const dutyUsers = swpuUsers.filter((item) => (item.roles || []).includes('duty') || item.role === 'duty');
+            const availableUsers = dutyUsers.length ? dutyUsers : swpuUsers.filter((item) => item.status !== 'inactive');
+            if (!availableUsers.length) {
+                return null;
+            }
+            const dayIndex = Math.max(0, new Date(`${today}T00:00:00`).getDate() - 1);
+            const dutyUser = availableUsers[dayIndex % availableUsers.length];
+            dutyRecord = {
+                id: `duty-${today}`,
+                date: today,
+                swpuUserId: dutyUser.id,
+                swpuUserName: dutyUser.name,
+                phone: dutyUser.phone,
+                note: '负责当日机房巡检、告警跟进与交接班记录。'
+            };
+            dutyList.push(dutyRecord);
+            persistNcicRecord('ncicDutyList', dutyList);
         }
         const swpuUser = swpuUsers.find((item) => item.id === dutyRecord.swpuUserId) || null;
         return {

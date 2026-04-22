@@ -18,6 +18,7 @@ class SwpuDashboardApp {
         this.updateAdminEntryVisibility();
         this.renderInspectionBoards();
         this.renderStats();
+        this.renderTodayDuty();
         this.renderRecentActivities();
         this.setupEventListeners();
         this.showSubmitSuccessFromSession();
@@ -133,6 +134,38 @@ class SwpuDashboardApp {
         document.getElementById('problem-ncicRooms').textContent = problem;
         document.getElementById('total-devices').textContent = devices.length;
         document.getElementById('total-management-pages').textContent = managementPages.length;
+    }
+
+    renderTodayDuty() {
+        const container = document.getElementById('todayDutyBody');
+        if (!container) return;
+        const duty = window.SWPUData.getTodayDutyRecord();
+        if (!duty) {
+            container.innerHTML = `
+                <div class="activity-item activity-empty">
+                    <i class="fas fa-calendar-xmark"></i>
+                    <span>今日暂未排班</span>
+                </div>
+            `;
+            return;
+        }
+        const pendingCount = Number(duty.pendingCount) || 0;
+        container.innerHTML = `
+            <div class="duty-card-inner">
+                <div class="duty-person-row">
+                    <div>
+                        <div class="duty-name">${duty.swpuUserName || duty.name || '未填写'}</div>
+                        <div class="duty-phone">${duty.phone || '未填写电话'}</div>
+                    </div>
+                    <span class="status-badge ${pendingCount > 0 ? 'status-warning' : 'status-normal'}">
+                        ${pendingCount > 0 ? `未完成 ${pendingCount}` : '已完成'}
+                    </span>
+                </div>
+                <div class="duty-highlight">
+                    <p class="duty-note">${duty.note || '负责当日机房巡检、告警跟进与交接班记录。'}</p>
+                </div>
+            </div>
+        `;
     }
 
     renderRecentActivities() {
@@ -350,6 +383,7 @@ class SwpuDashboardApp {
         window.addEventListener('patrolUpdated', () => {
             this.renderInspectionBoards();
             this.renderStats();
+            this.renderTodayDuty();
             this.renderRecentActivities();
         });
     }
