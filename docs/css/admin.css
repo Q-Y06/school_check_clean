@@ -2363,13 +2363,20 @@ body,
     display: flex;
     align-items: center;
     flex-direction: row;
+    width: calc(100% - 16px);
     min-width: 0;
+    min-height: 48px;
+    padding: 12px 20px;
+    margin: 4px 8px;
     white-space: nowrap;
+    border-radius: 8px;
 }
 
 .sidebar-nav li i,
 .sidebar-menu li i {
     flex: 0 0 20px;
+    width: 20px;
+    text-align: center;
 }
 
 .sidebar-nav li span:not(.badge),
@@ -2382,4 +2389,15 @@ body,
     word-break: keep-all;
     overflow-wrap: normal;
     writing-mode: horizontal-tb;
+}
+
+.sidebar-nav li:hover,
+.sidebar-menu li:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-nav li.active,
+.sidebar-menu li.active {
+    background: linear-gradient(90deg, #3949ab, #5c6bc0);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
