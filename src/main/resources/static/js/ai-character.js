@@ -836,7 +836,7 @@
             this.setLoading(true);
             const thinking = this.addChatMessage('assistant', text.thinking);
             try {
-                const response = await fetch('/api/ai/chat', {
+                const response = await fetch(this.apiUrl('/api/ai/chat'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -935,7 +935,7 @@
 
         async validateAiConfig(payload) {
             try {
-                const response = await fetch('/api/ai/validate', {
+                const response = await fetch(this.apiUrl('/api/ai/validate'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload || {})
@@ -970,6 +970,11 @@
                 apiUrl,
                 model
             };
+        }
+
+        apiUrl(path) {
+            const base = (window.ApiClient && window.ApiClient.API_BASE) || window.API_BASE || '';
+            return /^https?:\/\//i.test(path) ? path : `${base}${path}`;
         }
 
         updateAiSettingInputsState() {

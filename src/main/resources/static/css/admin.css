@@ -2068,6 +2068,99 @@ body,
     overflow-x: auto;
 }
 
+.duty-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin: 18px 0;
+}
+
+.duty-calendar-shell {
+    border: 1px solid #dbe4f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.duty-calendar-title {
+    padding: 16px 18px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #111c7a;
+    background: #f7f9fd;
+    border-bottom: 1px solid #dbe4f0;
+}
+
+.duty-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.duty-weekdays span {
+    padding: 10px;
+    text-align: center;
+    font-weight: 700;
+    color: #4b5875;
+    background: #fbfcff;
+    border-right: 1px solid #e3e9f3;
+    border-bottom: 1px solid #e3e9f3;
+}
+
+.duty-day {
+    min-height: 120px;
+    padding: 10px;
+    border-right: 1px solid #e3e9f3;
+    border-bottom: 1px solid #e3e9f3;
+    background: #fff;
+}
+
+.duty-day.is-empty {
+    background: #f7f9fd;
+}
+
+.duty-day.is-today {
+    background: #eef4ff;
+    box-shadow: inset 3px 0 0 #2444b8;
+}
+
+.duty-day-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    font-weight: 700;
+    color: #1f2a44;
+    background: #eef2f7;
+    margin-bottom: 10px;
+}
+
+.duty-day select {
+    width: 100%;
+    border: 1px solid #dbe4f0;
+    border-radius: 8px;
+    padding: 8px;
+    color: #13236f;
+    font-weight: 700;
+    background: #fff;
+}
+
+.duty-day .duty-phone {
+    margin-top: 8px;
+    color: #52627a;
+    font-size: 13px;
+}
+
+@media (max-width: 900px) {
+    .duty-summary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .duty-calendar-grid {
+        min-width: 720px;
+    }
+}
+
 .table-card table {
     min-width: 720px;
 }

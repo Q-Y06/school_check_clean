@@ -241,6 +241,11 @@ class AdminSystem {
         return ({ unchecked: '未检查', normal: '正常', warning: '警告', error: '异常', active: '启用', inactive: '停用' })[status] || status;
     }
 
+    apiUrl(path) {
+        const base = (window.ApiClient && window.ApiClient.API_BASE) || window.API_BASE || '';
+        return /^https?:\/\//i.test(path) ? path : `${base}${path}`;
+    }
+
     getRoleText(role) {
         return ({ admin: '管理员', engineer: '巡检工程师', duty: '值班工程师' })[role] || role;
     }
@@ -1134,7 +1139,7 @@ class AdminSystem {
     async uploadDocumentFile(file) {
         const formData = new FormData();
         formData.append('file', file);
-        const response = await fetch('/api/ncic/documents/upload', {
+        const response = await fetch(this.apiUrl('/api/ncic/documents/upload'), {
             method: 'POST',
             body: formData
         });
@@ -1325,7 +1330,7 @@ class AdminSystem {
 
     async loadAiSettingsIntoForm() {
         try {
-            const response = await fetch('/api/ai/settings');
+            const response = await fetch(this.apiUrl('/api/ai/settings'));
             if (!response.ok) return;
             const data = await response.json();
             if (data.apiUrl) {
@@ -1374,7 +1379,7 @@ class AdminSystem {
             window.localStorage.setItem('adminAiApiKey', apiKey);
         }
         try {
-            const response = await fetch('/api/ai/settings', {
+            const response = await fetch(this.apiUrl('/api/ai/settings'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ apiKey, apiUrl, model })
@@ -1404,7 +1409,7 @@ class AdminSystem {
         const apiUrl = document.getElementById('adminAiApiUrl')?.value.trim() || '';
         const model = document.getElementById('adminAiModel')?.value.trim() || '';
         try {
-            const response = await fetch('/api/ai/validate', {
+            const response = await fetch(this.apiUrl('/api/ai/validate'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ apiKey, apiUrl, model })

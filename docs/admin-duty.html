@@ -1,0 +1,21 @@
+<div class="table-card duty-admin-card">
+    <div class="table-header table-toolbar">
+        <div>
+            <h3>值班管理</h3>
+            <div class="table-note">维护每日值班人员，首页“今日值班”会同步读取这里的数据。</div>
+        </div>
+        <div class="toolbar-actions">
+            <button class="btn btn-secondary-lite" id="dutyPrevMonth" type="button"><i class="fas fa-chevron-left"></i>上月</button>
+            <button class="btn" id="dutyToday" type="button">本月</button>
+            <button class="btn btn-secondary-lite" id="dutyNextMonth" type="button">下月<i class="fas fa-chevron-right"></i></button>
+        </div>
+    </div>
+    <div class="duty-summary-grid" id="dutySummary"></div>
+    <div class="duty-calendar-shell">
+        <div class="duty-calendar-title" id="dutyCalendarTitle"></div>
+        <div class="duty-calendar-grid duty-weekdays">
+            <span>周日</span><span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span>
+        </div>
+        <div class="duty-calendar-grid" id="dutyCalendarGrid"></div>
+    </div>
+</div>

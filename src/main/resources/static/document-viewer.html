@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档查看</title>
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+        body { margin: 0; background: #f4f7fb; color: #172033; font-family: "Microsoft YaHei", Arial, sans-serif; }
+        .viewer-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 28px; background: #252f91; color: #fff; }
+        .viewer-header h1 { margin: 0; font-size: 20px; }
+        .viewer-actions { display: flex; gap: 10px; }
+        .viewer-actions a, .viewer-actions button { border: 1px solid rgba(255,255,255,.35); color: #fff; background: rgba(255,255,255,.12); border-radius: 8px; padding: 9px 14px; text-decoration: none; cursor: pointer; }
+        .viewer-body { width: min(1180px, calc(100vw - 40px)); margin: 24px auto; background: #fff; border: 1px solid #dbe4f0; border-radius: 8px; min-height: calc(100vh - 128px); box-shadow: 0 12px 30px rgba(25,39,83,.08); overflow: hidden; }
+        .viewer-content { padding: 28px; line-height: 1.8; }
+        .viewer-frame { width: 100%; height: calc(100vh - 150px); border: 0; display: block; background: #fff; }
+        .preview-table { width: 100%; border-collapse: collapse; }
+        .preview-table td { border: 1px solid #dbe4f0; padding: 8px 10px; }
+        .preview-empty { padding: 40px; text-align: center; color: #5b6680; }
+        pre { white-space: pre-wrap; word-break: break-word; }
+    </style>
+</head>
+<body>
+    <header class="viewer-header">
+        <h1 id="viewerTitle">文档查看</h1>
+        <div class="viewer-actions">
+            <button type="button" onclick="window.close()">关闭</button>
+            <a id="openRawLink" href="#" target="_blank" rel="noopener">打开原文档</a>
+        </div>
+    </header>
+    <main class="viewer-body" id="viewerBody">
+        <div class="viewer-content">正在加载文档...</div>
+    </main>
+    <script src="js/api.js"></script>
+    <script>
+        const params = new URLSearchParams(location.search);
+        const src = params.get('src') || '';
+        const title = params.get('title') || '文档查看';
+        const apiBase = (window.ApiClient && window.ApiClient.API_BASE) || window.API_BASE || '';
+        const body = document.getElementById('viewerBody');
+        document.getElementById('viewerTitle').textContent = title;
+
+        function absoluteUrl(value) {
+            if (/^https?:\/\//i.test(value)) return value;
+            if (value.startsWith('/upload/')) return `${apiBase}${value}`;
+            return new URL(value, location.href).href;
+        }
+
+        function renderError(message) {
+            body.innerHTML = `<div class="preview-empty"><h2>文档暂时无法预览</h2><p>${message}</p></div>`;
+        }
+
+        async function initViewer() {
+            if (!src) {
+                renderError('缺少文档地址。');
+                return;
+            }
+            const rawUrl = absoluteUrl(src);
+            document.getElementById('openRawLink').href = rawUrl;
+            const ext = (src.split('?')[0].match(/\.[^.\/]+$/) || [''])[0].toLowerCase();
+            if (['.pdf', '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp', '.html', '.htm'].includes(ext) && !src.startsWith('/upload/')) {
+                body.innerHTML = `<iframe class="viewer-frame" src="${rawUrl}"></iframe>`;
+                return;
+            }
+            try {
+                const response = await fetch(`${apiBase}/api/ncic/documents/preview?src=${encodeURIComponent(src)}`);
+                const payload = await response.json();
+                if (!response.ok || payload.code !== 200) {
+                    throw new Error(payload.msg || '后端无法转换该文档。');
+                }
+                const data = payload.data || {};
+                if (data.mode === 'embed') {
+                    body.innerHTML = `<iframe class="viewer-frame" src="${rawUrl}"></iframe>`;
+                } else {
+                    body.innerHTML = `<div class="viewer-content">${data.html || '<p>文档无可展示内容。</p>'}</div>`;
+                }
+            } catch (error) {
+                renderError(error.message || '请确认后端 Docker 正在运行，且文档文件存在。');
+            }
+        }
+
+        initViewer();
+    </script>
+</body>
+</html>

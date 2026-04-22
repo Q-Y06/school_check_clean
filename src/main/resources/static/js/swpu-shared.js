@@ -98,7 +98,7 @@
     function requestJson(method, url, body, async) {
         try {
             const xhr = new XMLHttpRequest();
-            xhr.open(method, url, async !== false);
+            xhr.open(method, buildApiUrl(url), async !== false);
             xhr.setRequestHeader('Content-Type', 'application/json');
             xhr.send(body === undefined ? null : JSON.stringify(body));
             if (async === false && xhr.status >= 200 && xhr.status < 300) {
@@ -115,6 +115,15 @@
         return response && response.code === 200 && response.data ? response.data : {};
     }
 
+    function getApiBase() {
+        return (window.ApiClient && window.ApiClient.API_BASE) || window.API_BASE || '';
+    }
+
+    function buildApiUrl(path) {
+        if (/^https?:\/\//i.test(path)) return path;
+        return `${getApiBase()}${path}`;
+    }
+
     function syncDatabaseRecord(key, value) {
         const targetKey = STORAGE_KEYS[key] || key;
         if (hydratingFromDatabase || !DATABASE_KEYS.has(targetKey)) {
@@ -122,7 +131,7 @@
         }
         if (window.fetch) {
             const payload = JSON.stringify(value);
-            fetch(`/api/ncic/sync/${encodeURIComponent(targetKey)}`, {
+            fetch(buildApiUrl(`/api/ncic/sync/${encodeURIComponent(targetKey)}`), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: payload,
