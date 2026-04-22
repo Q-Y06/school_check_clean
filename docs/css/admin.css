@@ -2351,3 +2351,35 @@ body,
         font-size: 18px;
     }
 }
+
+/* Keep the admin sidebar readable on GitHub Pages and desktop browsers. */
+.sidebar {
+    width: 280px;
+    min-width: 280px;
+}
+
+.sidebar-nav li,
+.sidebar-menu li {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.sidebar-nav li i,
+.sidebar-menu li i {
+    flex: 0 0 20px;
+}
+
+.sidebar-nav li span:not(.badge),
+.sidebar-menu li span:not(.badge) {
+    display: inline-flex;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    word-break: keep-all;
+    overflow-wrap: normal;
+    writing-mode: horizontal-tb;
+}
