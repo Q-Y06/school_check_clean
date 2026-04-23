@@ -40,9 +40,16 @@
     }
   }
 
+  function isAuxiliaryPage(page) {
+    return [
+      '/document-viewer.html',
+      '/report-detail.html'
+    ].some((suffix) => page.endsWith(suffix));
+  }
+
   function enforceSingleActiveTab() {
     const page = (window.location.pathname || '').toLowerCase();
-    if (page.endsWith('/login.html') || page.endsWith('/register.html')) {
+    if (page.endsWith('/login.html') || page.endsWith('/register.html') || isAuxiliaryPage(page)) {
       return;
     }
     const token = getToken();
