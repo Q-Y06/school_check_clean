@@ -7,8 +7,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import sc.school_check.application.service.UserSessionService;
 import sc.school_check.domain.model.User;
 import sc.school_check.shared.exception.BusinessException;
 import sc.school_check.application.service.UserService;
@@ -25,6 +27,7 @@ public class AuthController {
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final UserSessionService userSessionService;
 
     @PostMapping("/register")
     public ResponseUtil<?> register(@RequestBody User user) {
@@ -88,7 +91,12 @@ public class AuthController {
             throw new BusinessException(401, "账号未审核或已禁用");
         }
 
+        if (userSessionService.hasActiveSession(user.getUsername())) {
+            throw new BusinessException(409, "该账号已在其他设备登录，请先退出后再登录");
+        }
+
         String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
+        userSessionService.registerLogin(user.getUsername(), token);
 
         Map<String, Object> userInfo = new HashMap<>();
         userInfo.put("userId", user.getId());
@@ -104,6 +112,16 @@ public class AuthController {
         userInfo.put("token", token);
 
         return ResponseUtil.success(userInfo);
+    }
+
+    @PostMapping("/logout")
+    public ResponseUtil<?> logout(@RequestHeader(value = "Authorization", required = false) String authorization) {
+        String token = extractToken(authorization);
+        if (!isBlank(token) && jwtUtil.validateToken(token)) {
+            String username = jwtUtil.getUsernameFromToken(token);
+            userSessionService.logout(username, token);
+        }
+        return ResponseUtil.success();
     }
 
     @GetMapping("/me")
@@ -145,5 +163,13 @@ public class AuthController {
             return true;
         }
         return false;
+    }
+
+    private String extractToken(String authorization) {
+        if (authorization == null || authorization.isBlank()) {
+            return null;
+        }
+        String value = authorization.trim();
+        return value.startsWith("Bearer ") ? value.substring(7) : value;
     }
 }

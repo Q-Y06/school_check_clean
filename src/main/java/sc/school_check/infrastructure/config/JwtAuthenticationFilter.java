@@ -10,6 +10,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import sc.school_check.application.service.UserSessionService;
 import sc.school_check.shared.util.JwtUtil;
 
 import java.io.IOException;
@@ -19,9 +20,11 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final UserSessionService userSessionService;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil) {
+    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserSessionService userSessionService) {
         this.jwtUtil = jwtUtil;
+        this.userSessionService = userSessionService;
     }
 
     @Override
@@ -43,6 +46,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             String username = jwtUtil.getUsernameFromToken(token);
+            if (!userSessionService.isTokenActive(username, token)) {
+                writeUnauthorized(response, "该账号已在其他设备登录，请重新登录");
+                return;
+            }
             String role = jwtUtil.getRoleFromToken(token);
             String roleName = role == null ? "USER" : role.trim().toUpperCase();
 
@@ -56,6 +63,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private void writeUnauthorized(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("{\"code\":401,\"msg\":\"" + message + "\",\"data\":null}");
     }
 }
 

@@ -484,6 +484,12 @@ class SwpuDashboardApp {
 
     logout() {
         window.SWPUData.clearCurrentSwpuUser();
+        if (window.ApiClient && typeof window.ApiClient.logout === 'function') {
+            window.ApiClient.logout();
+            return;
+        }
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
         window.location.href = 'login.html';
     }
 }

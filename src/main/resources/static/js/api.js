@@ -72,6 +72,15 @@
     },
     delete: function (path) {
       return request(path, { method: 'DELETE' });
+    },
+    logout: async function () {
+      try {
+        await request('/api/auth/logout', { method: 'POST', body: JSON.stringify({}) });
+      } catch (error) {
+        // Local cleanup should still happen when the backend is unreachable.
+      } finally {
+        clearAuthAndRedirect();
+      }
     }
   };
 })(window);

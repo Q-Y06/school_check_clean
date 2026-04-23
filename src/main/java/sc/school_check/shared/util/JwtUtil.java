@@ -18,6 +18,10 @@ public class JwtUtil {
     private static final SecretKey SECRET_KEY = Keys.hmacShaKeyFor(SECRET_KEY_STRING.getBytes(StandardCharsets.UTF_8));
     private static final long EXPIRATION_TIME = 7 * 24 * 60 * 60 * 1000L;
 
+    public long getExpirationTimeMillis() {
+        return EXPIRATION_TIME;
+    }
+
     public String generateToken(Long userId, String username, String role) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
