@@ -35,6 +35,7 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .httpBasic(basic -> basic.disable())
+                .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) ->
@@ -51,6 +52,8 @@ public class SecurityConfig {
                                 "/register.html",
                                 "/detail.html",
                                 "/admin.html",
+                                "/document-viewer.html",
+                                "/docs/**",
                                 "/css/**",
                                 "/js/**",
                                 "/upload/**"
