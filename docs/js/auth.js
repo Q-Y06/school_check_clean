@@ -3,6 +3,7 @@ class AuthApp {
         window.SWPUData.seedData();
         this.bindLoginForm();
         this.bindRegisterForm();
+        this.showRedirectReason();
     }
 
     bindLoginForm() {
@@ -76,6 +77,13 @@ class AuthApp {
                 window.location.href = 'login.html';
             }, 1200);
         });
+    }
+
+    showRedirectReason() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('reason') === 'duplicate') {
+            this.showMessage('该账号已在另一个页面打开，请关闭其他页面后再登录', 'warning');
+        }
     }
 
     toSwpuUser(loginUser) {

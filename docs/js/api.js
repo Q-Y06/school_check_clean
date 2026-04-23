@@ -14,6 +14,83 @@
     }
   }
 
+  function getCurrentUserKey() {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      return user.username || user.userId || user.id || '';
+    } catch (error) {
+      return '';
+    }
+  }
+
+  function getTabId() {
+    let tabId = sessionStorage.getItem('schoolCheckTabId');
+    if (!tabId) {
+      tabId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+      sessionStorage.setItem('schoolCheckTabId', tabId);
+    }
+    return tabId;
+  }
+
+  function redirectDuplicateTab() {
+    sessionStorage.setItem('schoolCheckDuplicateTab', '1');
+    const page = (window.location.pathname || '').toLowerCase();
+    if (!page.endsWith('/login.html') && !page.endsWith('/register.html')) {
+      window.location.href = 'login.html?reason=duplicate';
+    }
+  }
+
+  function enforceSingleActiveTab() {
+    const page = (window.location.pathname || '').toLowerCase();
+    if (page.endsWith('/login.html') || page.endsWith('/register.html')) {
+      return;
+    }
+    const token = getToken();
+    const userKey = getCurrentUserKey();
+    if (!token || !userKey) {
+      return;
+    }
+
+    const tabId = getTabId();
+    const activeKey = `schoolCheckActiveTab:${userKey}`;
+    const ttl = 8000;
+
+    function readActiveTab() {
+      try {
+        return JSON.parse(localStorage.getItem(activeKey) || 'null');
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function heartbeat() {
+      const now = Date.now();
+      const active = readActiveTab();
+      if (active && active.tabId !== tabId && now - Number(active.updatedAt || 0) < ttl) {
+        redirectDuplicateTab();
+        return false;
+      }
+      localStorage.setItem(activeKey, JSON.stringify({ tabId, updatedAt: now }));
+      return true;
+    }
+
+    if (!heartbeat()) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      if (!heartbeat()) {
+        window.clearInterval(timer);
+      }
+    }, 3000);
+
+    window.addEventListener('beforeunload', () => {
+      const active = readActiveTab();
+      if (active && active.tabId === tabId) {
+        localStorage.removeItem(activeKey);
+      }
+    });
+  }
+
   async function request(path, options) {
     const opts = options || {};
     const headers = Object.assign({}, opts.headers || {});
@@ -83,4 +160,6 @@
       }
     }
   };
+
+  enforceSingleActiveTab();
 })(window);
