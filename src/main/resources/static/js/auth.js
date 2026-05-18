@@ -19,15 +19,7 @@ class AuthApp {
                 submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 登录中...';
             }
             try {
-                const loginUser = await window.ApiClient.postJson('/api/auth/login', {
-                    username: swpuUsername,
-                    password
-                });
-                const currentUser = this.toSwpuUser(loginUser);
-                localStorage.setItem('token', loginUser.token);
-                localStorage.setItem('user', JSON.stringify(loginUser));
-                window.SWPUData.saveCurrentSwpuUser(currentUser);
-                window.location.href = currentUser.role === 'admin' ? 'admin.html' : 'index.html';
+                await this.performLogin(swpuUsername, password);
             } catch (error) {
                 this.showMessage(error.message || '登录失败，请稍后重试', 'error');
             } finally {
@@ -37,6 +29,40 @@ class AuthApp {
                 }
             }
         });
+    }
+
+    async performLogin(username, password, forceLogin = false) {
+        try {
+            const loginUser = await window.ApiClient.postJson('/api/auth/login', {
+                username,
+                password,
+                force: forceLogin
+            });
+            const currentUser = this.toSwpuUser(loginUser);
+            localStorage.setItem('token', loginUser.token);
+            localStorage.setItem('user', JSON.stringify(loginUser));
+            window.SWPUData.saveCurrentSwpuUser(currentUser);
+            localStorage.removeItem(`schoolCheckActiveTab:${loginUser.username || currentUser.username || ''}`);
+            sessionStorage.removeItem('schoolCheckDuplicateTab');
+            window.location.href = currentUser.role === 'admin' ? 'admin.html' : 'index.html';
+        } catch (error) {
+            if (!forceLogin && this.shouldConfirmForceLogin(error)) {
+                const confirmed = window.confirm('该账号当前已登录。是否继续登录并让原会话下线？');
+                if (confirmed) {
+                    return this.performLogin(username, password, true);
+                }
+                return null;
+            }
+            throw error;
+        }
+        return null;
+    }
+
+    shouldConfirmForceLogin(error) {
+        const message = String(error?.message || '');
+        return error?.code === 409
+            || error?.status === 409
+            || /已在.*登录|先退出|其他设备/.test(message);
     }
 
     bindRegisterForm() {

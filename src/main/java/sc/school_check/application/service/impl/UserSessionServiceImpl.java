@@ -18,10 +18,11 @@ import java.util.concurrent.ConcurrentHashMap;
 public class UserSessionServiceImpl implements UserSessionService {
 
     private static final String SESSION_KEY_PREFIX = "school_check:login:";
+    private static final Duration SESSION_IDLE_TIMEOUT = Duration.ofMinutes(5);
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final JwtUtil jwtUtil;
-    private final Map<String, String> fallbackSessions = new ConcurrentHashMap<>();
+    private final Map<String, FallbackSession> fallbackSessions = new ConcurrentHashMap<>();
 
     @Override
     public boolean hasActiveSession(String username) {
@@ -29,7 +30,7 @@ public class UserSessionServiceImpl implements UserSessionService {
         try {
             return Boolean.TRUE.equals(redisTemplate.hasKey(key));
         } catch (RuntimeException ex) {
-            return fallbackSessions.containsKey(key);
+            return getFallbackSession(key) != null;
         }
     }
 
@@ -38,9 +39,9 @@ public class UserSessionServiceImpl implements UserSessionService {
         String key = key(username);
         String tokenHash = hash(token);
         try {
-            redisTemplate.opsForValue().set(key, tokenHash, Duration.ofMillis(jwtUtil.getExpirationTimeMillis()));
+            redisTemplate.opsForValue().set(key, tokenHash, sessionTimeout());
         } catch (RuntimeException ex) {
-            fallbackSessions.put(key, tokenHash);
+            fallbackSessions.put(key, new FallbackSession(tokenHash, nextExpiryTime()));
         }
     }
 
@@ -52,25 +53,73 @@ public class UserSessionServiceImpl implements UserSessionService {
             Object activeTokenHash = redisTemplate.opsForValue().get(key);
             return tokenHash.equals(activeTokenHash);
         } catch (RuntimeException ex) {
-            return tokenHash.equals(fallbackSessions.get(key));
+            FallbackSession session = getFallbackSession(key);
+            return session != null && tokenHash.equals(session.tokenHash);
+        }
+    }
+
+    @Override
+    public boolean touchSession(String username, String token) {
+        String key = key(username);
+        String tokenHash = hash(token);
+        try {
+            Object activeTokenHash = redisTemplate.opsForValue().get(key);
+            if (!tokenHash.equals(activeTokenHash)) {
+                return false;
+            }
+            redisTemplate.expire(key, sessionTimeout());
+            return true;
+        } catch (RuntimeException ex) {
+            FallbackSession session = getFallbackSession(key);
+            if (session == null || !tokenHash.equals(session.tokenHash)) {
+                return false;
+            }
+            session.expiresAt = nextExpiryTime();
+            fallbackSessions.put(key, session);
+            return true;
         }
     }
 
     @Override
     public void logout(String username, String token) {
         String key = key(username);
-        if (!isTokenActive(username, token)) {
-            return;
-        }
+        String tokenHash = hash(token);
         try {
+            Object activeTokenHash = redisTemplate.opsForValue().get(key);
+            if (!tokenHash.equals(activeTokenHash)) {
+                return;
+            }
             redisTemplate.delete(key);
         } catch (RuntimeException ex) {
-            fallbackSessions.remove(key);
+            FallbackSession session = getFallbackSession(key);
+            if (session != null && tokenHash.equals(session.tokenHash)) {
+                fallbackSessions.remove(key);
+            }
         }
     }
 
     private String key(String username) {
         return SESSION_KEY_PREFIX + (username == null ? "" : username.trim());
+    }
+
+    private Duration sessionTimeout() {
+        return Duration.ofMillis(Math.min(jwtUtil.getExpirationTimeMillis(), SESSION_IDLE_TIMEOUT.toMillis()));
+    }
+
+    private long nextExpiryTime() {
+        return System.currentTimeMillis() + sessionTimeout().toMillis();
+    }
+
+    private FallbackSession getFallbackSession(String key) {
+        FallbackSession session = fallbackSessions.get(key);
+        if (session == null) {
+            return null;
+        }
+        if (session.expiresAt <= System.currentTimeMillis()) {
+            fallbackSessions.remove(key);
+            return null;
+        }
+        return session;
     }
 
     private String hash(String token) {
@@ -84,6 +133,16 @@ public class UserSessionServiceImpl implements UserSessionService {
             return builder.toString();
         } catch (NoSuchAlgorithmException ex) {
             throw new IllegalStateException("SHA-256 is unavailable", ex);
+        }
+    }
+
+    private static final class FallbackSession {
+        private final String tokenHash;
+        private volatile long expiresAt;
+
+        private FallbackSession(String tokenHash, long expiresAt) {
+            this.tokenHash = tokenHash;
+            this.expiresAt = expiresAt;
         }
     }
 }

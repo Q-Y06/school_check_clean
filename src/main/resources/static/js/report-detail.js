@@ -15,7 +15,13 @@ class ReportDetailPage {
       const me = await ApiClient.get('/api/auth/me');
       if (String(me.role || '').toLowerCase() !== 'admin') {
         this.notify('\u4ec5\u7ba1\u7406\u5458\u53ef\u67e5\u770b\u4eba\u5458\u5de1\u68c0\u660e\u7ec6', 'error');
-        setTimeout(() => { window.location.href = 'index.html'; }, 800);
+        setTimeout(() => {
+          if (window.ApiClient) {
+            window.ApiClient.navigate('index.html');
+            return;
+          }
+          window.location.href = 'index.html';
+        }, 800);
         return;
       }
       const currentDate = document.getElementById('report-current-date');

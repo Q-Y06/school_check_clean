@@ -183,6 +183,10 @@ class SwpuDashboardApp {
         `;
         container.querySelectorAll('[data-alert-url]').forEach((item) => {
             const openAlert = () => {
+                if (window.ApiClient) {
+                    window.ApiClient.navigate(item.dataset.alertUrl);
+                    return;
+                }
                 window.location.href = item.dataset.alertUrl;
             };
             item.addEventListener('click', openAlert);
@@ -371,12 +375,24 @@ class SwpuDashboardApp {
         }
 
         document.getElementById('btn-knowledge-base')?.addEventListener('click', () => {
+            if (window.ApiClient) {
+                window.ApiClient.navigate('detail.html?view=knowledge');
+                return;
+            }
             window.location.href = 'detail.html?view=knowledge';
         });
         document.getElementById('btn-my-history')?.addEventListener('click', () => {
+            if (window.ApiClient) {
+                window.ApiClient.navigate('detail.html?view=all');
+                return;
+            }
             window.location.href = 'detail.html?view=all';
         });
         document.getElementById('btn-device-docs')?.addEventListener('click', () => {
+            if (window.ApiClient) {
+                window.ApiClient.navigate('detail.html?view=documents');
+                return;
+            }
             window.location.href = 'detail.html?view=documents';
         });
 
@@ -483,11 +499,11 @@ class SwpuDashboardApp {
     }
 
     logout() {
-        window.SWPUData.clearCurrentSwpuUser();
         if (window.ApiClient && typeof window.ApiClient.logout === 'function') {
             window.ApiClient.logout();
             return;
         }
+        window.SWPUData.clearCurrentSwpuUser();
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = 'login.html';

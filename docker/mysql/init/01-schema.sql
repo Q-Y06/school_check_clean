@@ -180,12 +180,16 @@ CREATE TABLE IF NOT EXISTS ncic_patrol_record (
     rich_content MEDIUMTEXT,
     images MEDIUMTEXT,
     inspector VARCHAR(100),
+    inspector_id BIGINT,
+    inspector_username VARCHAR(64),
     patrol_date DATE,
     patrol_time DATETIME,
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_ncic_patrol_target (target_type, target_id),
-    INDEX idx_ncic_patrol_time (patrol_time)
+    INDEX idx_ncic_patrol_time (patrol_time),
+    INDEX idx_ncic_patrol_inspector_id (inspector_id),
+    INDEX idx_ncic_patrol_inspector_username (inspector_username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS ncic_operation_log (

@@ -157,8 +157,13 @@
   }
 
   logout() {
+    if (window.ApiClient && typeof window.ApiClient.logout === 'function') {
+      window.ApiClient.logout();
+      return;
+    }
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    localStorage.removeItem('swpuUser');
     window.location.href = 'login.html';
   }
 }

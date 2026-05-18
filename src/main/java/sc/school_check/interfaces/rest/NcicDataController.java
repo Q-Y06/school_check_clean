@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,6 +16,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import sc.school_check.application.service.UserService;
+import sc.school_check.domain.model.User;
+import sc.school_check.shared.exception.BusinessException;
 import sc.school_check.shared.util.ResponseUtil;
 
 import java.io.ByteArrayOutputStream;
@@ -54,16 +58,19 @@ public class NcicDataController {
     private final Path documentUploadDir;
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
+    private final UserService userService;
 
     public NcicDataController(
             JdbcTemplate jdbcTemplate,
             ObjectMapper objectMapper,
+            UserService userService,
             @Value("${app.upload-dir:${UPLOAD_DIR:./upload}}") String uploadDir
     ) {
         String resolvedUploadDir = (uploadDir == null || uploadDir.isBlank()) ? "./upload" : uploadDir;
         this.documentUploadDir = Path.of(resolvedUploadDir).toAbsolutePath().normalize().resolve("documents").normalize();
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
+        this.userService = userService;
     }
 
     @GetMapping("/bootstrap")
@@ -101,6 +108,64 @@ public class NcicDataController {
             }
         }
         return ResponseUtil.success("同步成功");
+    }
+
+    @GetMapping("/patrol-records")
+    public ResponseUtil<List<Map<String, Object>>> listPatrolRecords(
+            @RequestParam(required = false) String targetType,
+            @RequestParam(required = false) String targetId,
+            @RequestParam(defaultValue = "false") Boolean mine,
+            Authentication authentication) {
+        Long inspectorId = null;
+        if (Boolean.TRUE.equals(mine)) {
+            inspectorId = requireCurrentUser(authentication).getId();
+        }
+        return ResponseUtil.success(queryPatrolRecords(normalizeTargetType(targetType, true), targetId, inspectorId, null));
+    }
+
+    @PostMapping("/patrol-records")
+    @Transactional(rollbackFor = Exception.class)
+    public ResponseUtil<Map<String, Object>> createPatrolRecord(
+            @RequestBody Map<String, Object> payload,
+            Authentication authentication) {
+        User user = requireCurrentUser(authentication);
+        String targetType = normalizeTargetType(string(payload.get("targetType")), false);
+        String targetId = string(payload.get("targetId"));
+        String status = normalizeStatus(string(payload.get("status")));
+        if (targetId == null || targetId.isBlank()) {
+            throw new BusinessException(400, "巡检对象 ID 不能为空");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        String timestamp = now.toString().substring(0, 19);
+        String recordId = "patrol_" + UUID.randomUUID().toString().replace("-", "");
+        String inspectorName = firstText(user.getFullName(), user.getUsername());
+
+        jdbcTemplate.update("""
+                INSERT INTO ncic_patrol_record
+                (id, target_type, target_id, status, notes, rich_content, images, inspector, inspector_id, inspector_username, patrol_date, patrol_time)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                recordId,
+                targetType,
+                targetId,
+                status,
+                string(payload.get("notes")),
+                firstText(payload.get("richContent"), payload.get("richText")),
+                json(payload.get("images")),
+                inspectorName,
+                user.getId(),
+                user.getUsername(),
+                Date.valueOf(now.toLocalDate()),
+                Timestamp.valueOf(now));
+
+        updatePatrolTargetStatus(targetType, targetId, status, timestamp);
+
+        List<Map<String, Object>> records = queryPatrolRecords(null, null, null, recordId);
+        if (records.isEmpty()) {
+            throw new BusinessException(500, "巡检记录保存失败");
+        }
+        return ResponseUtil.success(records.get(0));
     }
 
     @PostMapping("/documents/upload")
@@ -196,7 +261,11 @@ public class NcicDataController {
                        location,
                        status,
                        guide_content AS description,
-                       NULL AS lastInspection,
+                       (
+                           SELECT DATE_FORMAT(MAX(patrol_time), '%Y-%m-%dT%H:%i:%s')
+                           FROM ncic_patrol_record patrol
+                           WHERE patrol.target_type = 'room' AND patrol.target_id = CONCAT('ncicRoom-', room.id)
+                       ) AS lastInspection,
                        CASE WHEN type LIKE '%UPS%' THEN 1 ELSE 0 END AS isCore
                 FROM room
                 WHERE is_deleted = 0
@@ -242,6 +311,8 @@ public class NcicDataController {
                        rich_content AS richContent,
                        images,
                        inspector,
+                       inspector_id AS inspectorId,
+                       inspector_username AS inspectorUsername,
                        DATE_FORMAT(patrol_date, '%Y-%m-%d') AS date,
                        DATE_FORMAT(patrol_time, '%Y-%m-%dT%H:%i:%s') AS timestamp
                 FROM ncic_patrol_record
@@ -373,18 +444,35 @@ public class NcicDataController {
             }
             jdbcTemplate.update("""
                     INSERT INTO ncic_patrol_record
-                    (id, target_type, target_id, status, notes, rich_content, images, inspector, patrol_date, patrol_time)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (id, target_type, target_id, status, notes, rich_content, images, inspector, inspector_id, inspector_username, patrol_date, patrol_time)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     requiredId(row, "patrol"), targetType, targetId, string(row.get("status")), string(row.get("notes")),
                     firstText(row.get("richContent"), row.get("richText")), json(row.get("images")), string(row.get("inspector")),
+                    longValue(row.get("inspectorId")), string(row.get("inspectorUsername")),
                     sqlDate(row.get("date")), sqlTimestamp(row.get("timestamp")));
         }
     }
 
     private void replaceOperationLogs(List<Map<String, Object>> rows) {
-        jdbcTemplate.update("DELETE FROM ncic_operation_log");
+        if (rows == null || rows.isEmpty()) {
+            jdbcTemplate.update("DELETE FROM ncic_operation_log");
+            return;
+        }
+        List<Map<String, Object>> merged = new ArrayList<>(listOperationLogs());
+        Map<String, Map<String, Object>> mergedById = new LinkedHashMap<>();
+        for (Map<String, Object> item : merged) {
+            mergedById.put(requiredId(item, "op"), new LinkedHashMap<>(item));
+        }
         for (Map<String, Object> row : rows) {
+            mergedById.put(requiredId(row, "op"), new LinkedHashMap<>(row));
+        }
+        List<Map<String, Object>> finalRows = mergedById.values().stream()
+                .sorted(Comparator.comparing((Map<String, Object> item) -> sqlTimestamp(item.get("timestamp"))).reversed())
+                .limit(300)
+                .toList();
+        jdbcTemplate.update("DELETE FROM ncic_operation_log");
+        for (Map<String, Object> row : finalRows) {
             jdbcTemplate.update("""
                     INSERT INTO ncic_operation_log
                     (id, action, level, operator, log_time, payload)
@@ -412,6 +500,55 @@ public class NcicDataController {
         return objectMapper.convertValue(value, LIST_TYPE);
     }
 
+    private List<Map<String, Object>> queryPatrolRecords(String targetType, String targetId, Long inspectorId, String recordId) {
+        StringBuilder sql = new StringBuilder("""
+                SELECT p.id,
+                       p.target_type AS targetType,
+                       p.target_id AS targetId,
+                       COALESCE(r.name, d.name, m.name, p.target_id) AS targetName,
+                       p.status,
+                       p.notes,
+                       p.rich_content AS richContent,
+                       p.images,
+                       p.inspector,
+                       p.inspector_id AS inspectorId,
+                       p.inspector_username AS inspectorUsername,
+                       DATE_FORMAT(p.patrol_date, '%Y-%m-%d') AS date,
+                       DATE_FORMAT(p.patrol_time, '%Y-%m-%dT%H:%i:%s') AS timestamp
+                FROM ncic_patrol_record p
+                LEFT JOIN room r
+                  ON p.target_type = 'room'
+                 AND p.target_id = CONCAT('ncicRoom-', r.id)
+                 AND r.is_deleted = 0
+                LEFT JOIN ncic_device d
+                  ON p.target_type = 'device'
+                 AND p.target_id = d.id
+                LEFT JOIN ncic_management_page m
+                  ON p.target_type = 'management'
+                 AND p.target_id = m.id
+                WHERE 1 = 1
+                """);
+        List<Object> params = new ArrayList<>();
+        if (recordId != null && !recordId.isBlank()) {
+            sql.append(" AND p.id = ?");
+            params.add(recordId);
+        }
+        if (targetType != null && !targetType.isBlank()) {
+            sql.append(" AND p.target_type = ?");
+            params.add(targetType);
+        }
+        if (targetId != null && !targetId.isBlank()) {
+            sql.append(" AND p.target_id = ?");
+            params.add(targetId);
+        }
+        if (inspectorId != null) {
+            sql.append(" AND p.inspector_id = ?");
+            params.add(inspectorId);
+        }
+        sql.append(" ORDER BY p.patrol_time DESC, p.id DESC");
+        return jdbcTemplate.queryForList(sql.toString(), params.toArray());
+    }
+
     private String requiredId(Map<String, Object> row, String prefix) {
         String id = string(row.get("id"));
         return id == null || id.isBlank() ? prefix + "_" + UUID.randomUUID() : id;
@@ -424,6 +561,17 @@ public class NcicDataController {
         }
         String digits = raw.replaceAll("\\D+", "");
         return digits.isBlank() ? null : Long.parseLong(digits);
+    }
+
+    private Long longValue(Object value) {
+        if (value instanceof Number number) {
+            return number.longValue();
+        }
+        String raw = string(value);
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        return Long.parseLong(raw);
     }
 
     private String string(Object value) {
@@ -446,6 +594,93 @@ public class NcicDataController {
             return 0;
         }
         return Integer.parseInt(String.valueOf(value));
+    }
+
+    private User requireCurrentUser(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
+            throw new BusinessException(401, "未登录或登录已过期");
+        }
+        User user = userService.getByUsername(authentication.getName());
+        if (user == null || user.getStatus() != 1) {
+            throw new BusinessException(401, "登录状态已失效，请重新登录");
+        }
+        return user;
+    }
+
+    private String normalizeTargetType(String value, boolean allowBlank) {
+        String normalized = string(value);
+        if (normalized == null || normalized.isBlank()) {
+            if (allowBlank) {
+                return null;
+            }
+            throw new BusinessException(400, "巡检对象类型不能为空");
+        }
+        normalized = normalized.trim().toLowerCase(Locale.ROOT);
+        if (!Set.of("room", "device", "management").contains(normalized)) {
+            throw new BusinessException(400, "不支持的巡检对象类型");
+        }
+        return normalized;
+    }
+
+    private String normalizeStatus(String status) {
+        String normalized = string(status);
+        if (normalized == null || normalized.isBlank()) {
+            throw new BusinessException(400, "巡检状态不能为空");
+        }
+        normalized = normalized.trim().toLowerCase(Locale.ROOT);
+        if (!Set.of("normal", "warning", "error", "unchecked").contains(normalized)) {
+            throw new BusinessException(400, "不支持的巡检状态");
+        }
+        return normalized;
+    }
+
+    private void updatePatrolTargetStatus(String targetType, String targetId, String status, String timestamp) {
+        switch (targetType) {
+            case "room" -> {
+                Long roomId = numericId(targetId);
+                if (roomId == null) {
+                    throw new BusinessException(400, "机房 ID 格式不正确");
+                }
+                int updated = jdbcTemplate.update("""
+                        UPDATE room
+                        SET status = ?, update_time = CURRENT_TIMESTAMP
+                        WHERE id = ? AND is_deleted = 0
+                        """, status, roomId);
+                if (updated <= 0) {
+                    throw new BusinessException(404, "未找到对应的机房对象");
+                }
+            }
+            case "device" -> {
+                int updated = jdbcTemplate.update("""
+                        UPDATE ncic_device
+                        SET status = ?, updated_at = ?, inspection_count = (
+                                SELECT COUNT(*)
+                                FROM ncic_patrol_record
+                                WHERE target_type = 'device' AND target_id = ?
+                            ),
+                            fault_count = (
+                                SELECT COUNT(*)
+                                FROM ncic_patrol_record
+                                WHERE target_type = 'device' AND target_id = ? AND status IN ('warning', 'error')
+                            )
+                        WHERE id = ?
+                        """, status, timestamp, targetId, targetId, targetId);
+                if (updated <= 0) {
+                    throw new BusinessException(404, "未找到对应的设备对象");
+                }
+            }
+            case "management" -> {
+                int updated = jdbcTemplate.update("""
+                        UPDATE ncic_management_page
+                        SET status = ?, last_inspection = ?
+                        WHERE id = ?
+                        """, status, timestamp, targetId);
+                if (updated <= 0) {
+                    throw new BusinessException(404, "未找到对应的管理页面对象");
+                }
+            }
+            default -> throw new BusinessException(400, "不支持的巡检对象类型");
+        }
     }
 
     private Date sqlDate(Object value) {

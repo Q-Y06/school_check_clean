@@ -190,7 +190,7 @@ class DailyPatrolDetailPage {
         document.getElementById('modal-close').addEventListener('click', () => document.getElementById('image-modal').style.display = 'none');
     }
 
-    submitDailyPatrol() {
+    async submitDailyPatrol() {
         if (this.isSubmitting) return;
         const status = document.getElementById('dailyPatrol-status').value;
         const notes = document.getElementById('dailyPatrol-notes').value.trim();
@@ -207,25 +207,9 @@ class DailyPatrolDetailPage {
         }
         let submitted = false;
         try {
-            const dailyPatrolRecord = {
-                id: `dailyPatrol-${Date.now()}`,
-                date: window.SWPUData.getTodayDate(),
-                timestamp: window.SWPUData.formatLocalDateTime(),
-                inspector: this.currentUser.name,
-                inspectorId: this.currentUser.id,
-                status,
-                notes,
-                richText,
-                richContent: richText,
-                images: this.uploadedFiles
-            };
-            if (this.currentTargetType === 'device') {
-                window.SWPUData.upsertDevicePatrolRecord(this.currentTarget.id, dailyPatrolRecord);
-            } else if (this.currentTargetType === 'management') {
-                window.SWPUData.upsertManagementPatrolRecord(this.currentTarget.id, dailyPatrolRecord);
-            } else {
-                window.SWPUData.upsertDailyPatrolRecord(this.currentTarget.id, dailyPatrolRecord);
-            }
+            const serverRecord = await this.savePatrolRecordToServer(status, notes, richText);
+            const dailyPatrolRecord = this.toLocalPatrolRecord(serverRecord);
+            this.cacheSubmittedRecord(dailyPatrolRecord);
             this.applySubmittedStatus(dailyPatrolRecord);
             this.refreshCurrentTarget();
             this.renderTarget();
@@ -248,6 +232,67 @@ class DailyPatrolDetailPage {
                 }
             }
         }
+    }
+
+    async savePatrolRecordToServer(status, notes, richText) {
+        if (!window.ApiClient || typeof window.ApiClient.postJson !== 'function') {
+            throw new Error('服务器连接未就绪，请刷新后重试');
+        }
+        return window.ApiClient.postJson('/api/ncic/patrol-records', {
+            targetType: this.currentTargetType,
+            targetId: this.currentTarget.id,
+            status,
+            notes,
+            richContent: richText,
+            images: this.uploadedFiles
+        });
+    }
+
+    toLocalPatrolRecord(serverRecord) {
+        const timestamp = serverRecord?.timestamp || window.SWPUData.formatLocalDateTime();
+        return {
+            id: serverRecord?.id || `dailyPatrol-${Date.now()}`,
+            date: serverRecord?.date || String(timestamp).slice(0, 10),
+            timestamp,
+            inspector: serverRecord?.inspector || this.currentUser.name,
+            inspectorId: serverRecord?.inspectorId || this.currentUser.userId || this.currentUser.id,
+            inspectorUsername: serverRecord?.inspectorUsername || this.currentUser.username || this.currentUser.swpuUsername,
+            status: serverRecord?.status || 'unchecked',
+            notes: serverRecord?.notes || '',
+            richText: serverRecord?.richContent || '',
+            richContent: serverRecord?.richContent || '',
+            images: this.normalizeRecordImages(serverRecord?.images)
+        };
+    }
+
+    cacheSubmittedRecord(record) {
+        if (this.currentTargetType === 'device') {
+            window.SWPUData.upsertDevicePatrolRecord(this.currentTarget.id, record);
+            return;
+        }
+        if (this.currentTargetType === 'management') {
+            window.SWPUData.upsertManagementPatrolRecord(this.currentTarget.id, record);
+            return;
+        }
+        window.SWPUData.upsertDailyPatrolRecord(this.currentTarget.id, record);
+    }
+
+    normalizeRecordImages(images) {
+        if (Array.isArray(images)) {
+            return images;
+        }
+        if (!images) {
+            return [];
+        }
+        if (typeof images === 'string') {
+            try {
+                const parsed = JSON.parse(images);
+                return Array.isArray(parsed) ? parsed : (images ? [images] : []);
+            } catch (error) {
+                return images ? [images] : [];
+            }
+        }
+        return [];
     }
 
     addPatrolOperationLog(record) {
@@ -327,6 +372,10 @@ class DailyPatrolDetailPage {
     }
 
     goBackAfterSubmit() {
+        if (window.ApiClient) {
+            window.ApiClient.goBack('index.html');
+            return;
+        }
         if (window.history.length > 1) {
             window.history.back();
             return;

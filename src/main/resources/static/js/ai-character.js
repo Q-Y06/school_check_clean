@@ -812,6 +812,10 @@
                 return;
             }
             if (action === 'records') {
+                if (window.ApiClient) {
+                    window.ApiClient.navigate('detail.html?view=all');
+                    return;
+                }
                 window.location.href = 'detail.html?view=all';
                 return;
             }
@@ -1171,6 +1175,10 @@
         jumpToUsefulPage() {
             const user = window.SWPUData?.getCurrentSwpuUser?.();
             if (user?.role === 'admin' && !location.pathname.endsWith('/admin.html')) {
+                if (window.ApiClient) {
+                    window.ApiClient.navigate('admin.html');
+                    return;
+                }
                 window.location.href = 'admin.html';
                 return;
             }
@@ -1179,6 +1187,10 @@
                 return;
             }
             if (location.pathname.endsWith('/admin.html')) {
+                if (window.ApiClient) {
+                    window.ApiClient.navigate('index.html');
+                    return;
+                }
                 window.location.href = 'index.html';
                 return;
             }

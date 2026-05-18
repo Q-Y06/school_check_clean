@@ -1,4 +1,4 @@
-﻿class InspectionHistoryPage {
+class InspectionHistoryPage {
   constructor() {
     this.currentUser = null;
     this.records = [];
@@ -60,11 +60,11 @@
   }
 
   async loadRecords() {
-    const page = await ApiClient.get('/api/inspection/list?pageNum=1&pageSize=500');
-    const currentId = Number(this.currentUser.id || this.currentUser.userId || 0);
-    this.records = (page?.records || [])
-      .filter((item) => !currentId || Number(item.userId || item.inspectorId || 0) === currentId)
-      .sort((a, b) => new Date(b.inspectionTime || 0) - new Date(a.inspectionTime || 0));
+    const records = await ApiClient.get('/api/ncic/patrol-records?mine=true');
+    this.records = (records || []).map((item) => ({
+      ...item,
+      targetKey: `${item.targetType || 'unknown'}:${item.targetId || ''}`
+    })).sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
   }
 
   bindEvents() {
@@ -131,15 +131,15 @@
 
   renderRoomFilter() {
     const roomFilter = document.getElementById('roomFilter');
-    const roomMap = new Map();
+    const targetMap = new Map();
     this.records.forEach((item) => {
-      const key = String(item.roomId || '');
+      const key = item.targetKey;
       if (!key) return;
-      roomMap.set(key, item.roomName || `机房 ${key}`);
+      targetMap.set(key, `${item.targetName || item.targetId || '未知对象'} · ${this.getTargetTypeText(item.targetType)}`);
     });
     const currentValue = roomFilter.value || '';
-    const options = ['<option value="">全部机房</option>']
-      .concat(Array.from(roomMap.entries()).map(([id, name]) => `<option value="${this.escapeHtml(id)}" ${currentValue === id ? 'selected' : ''}>${this.escapeHtml(name)}</option>`));
+    const options = ['<option value="">全部对象</option>']
+      .concat(Array.from(targetMap.entries()).map(([id, name]) => `<option value="${this.escapeHtml(id)}" ${currentValue === id ? 'selected' : ''}>${this.escapeHtml(name)}</option>`));
     roomFilter.innerHTML = options.join('');
   }
 
@@ -182,17 +182,17 @@
 
   applyFilters() {
     const keyword = (document.getElementById('keywordInput')?.value || '').trim().toLowerCase();
-    const roomId = document.getElementById('roomFilter')?.value || '';
+    const targetKey = document.getElementById('roomFilter')?.value || '';
     const status = this.activeStatus || document.getElementById('statusFilter')?.value || '';
     const date = document.getElementById('dateFilter')?.value || '';
 
     this.filtered = this.records.filter((item) => {
-      const haystack = `${item.roomName || ''} ${item.notes || ''} ${item.richContent || ''}`.toLowerCase();
+      const haystack = `${item.targetName || ''} ${item.targetId || ''} ${item.notes || ''} ${item.richContent || ''} ${item.inspector || ''}`.toLowerCase();
       const hitKeyword = !keyword || haystack.includes(keyword);
-      const hitRoom = !roomId || String(item.roomId || '') === roomId;
+      const hitTarget = !targetKey || item.targetKey === targetKey;
       const hitStatus = !status || String(item.status || '') === status;
-      const hitDate = !date || this.toDateString(item.inspectionTime) === date;
-      return hitKeyword && hitRoom && hitStatus && hitDate;
+      const hitDate = !date || this.toDateString(item.timestamp) === date;
+      return hitKeyword && hitTarget && hitStatus && hitDate;
     });
   }
 
@@ -216,13 +216,14 @@
       <article class="history-item">
         <div class="history-top">
           <div>
-            <h3 class="history-title">${this.escapeHtml(item.roomName || `机房 ${item.roomId || '-'}`)}</h3>
-            <div class="history-meta">巡检时间：${this.formatTime(item.inspectionTime)} · 巡检人：${this.escapeHtml(item.userName || item.inspectorName || this.currentUser.fullName || this.currentUser.username || '本人')}</div>
+            <h3 class="history-title">${this.escapeHtml(item.targetName || item.targetId || '未知对象')}</h3>
+            <div class="history-meta">巡检时间：${this.formatTime(item.timestamp)} · 巡检人：${this.escapeHtml(item.inspector || this.currentUser.fullName || this.currentUser.username || '本人')}</div>
           </div>
           <span class="status-pill status-${this.escapeHtml(item.status || 'unchecked')}">${this.getStatusText(item.status)}</span>
         </div>
         <div class="history-tags">
-          <span class="history-tag">机房 ID：${this.escapeHtml(item.roomId || '-')}</span>
+          <span class="history-tag">类型：${this.getTargetTypeText(item.targetType)}</span>
+          <span class="history-tag">对象 ID：${this.escapeHtml(item.targetId || '-')}</span>
           <span class="history-tag">记录 ID：${this.escapeHtml(item.id || '-')}</span>
         </div>
         <div class="history-content">${this.escapeHtml(item.notes || item.richContent || '暂无巡检备注')}</div>
@@ -264,10 +265,11 @@
   }
 
   openDetail(item) {
-    document.getElementById('detailTitle').textContent = item.roomName || `机房 ${item.roomId || '-'}`;
-    document.getElementById('detailMeta').textContent = `巡检时间：${this.formatTime(item.inspectionTime)} | 巡检状态：${this.getStatusText(item.status)} | 巡检人：${item.userName || item.inspectorName || this.currentUser.fullName || this.currentUser.username || '本人'}`;
+    document.getElementById('detailTitle').textContent = item.targetName || item.targetId || '巡检详情';
+    document.getElementById('detailMeta').textContent = `巡检时间：${this.formatTime(item.timestamp)} | 巡检状态：${this.getStatusText(item.status)} | 巡检人：${item.inspector || this.currentUser.fullName || this.currentUser.username || '本人'}`;
     document.getElementById('detailTags').innerHTML = `
-      <span class="history-tag">机房 ID：${this.escapeHtml(item.roomId || '-')}</span>
+      <span class="history-tag">类型：${this.getTargetTypeText(item.targetType)}</span>
+      <span class="history-tag">对象 ID：${this.escapeHtml(item.targetId || '-')}</span>
       <span class="history-tag">记录 ID：${this.escapeHtml(item.id || '-')}</span>
       <span class="history-tag">状态：${this.getStatusText(item.status)}</span>
     `;
@@ -277,6 +279,12 @@
 
   closeDetail() {
     document.getElementById('detailModal')?.classList.remove('active');
+  }
+
+  getTargetTypeText(targetType) {
+    if (targetType === 'device') return '设备';
+    if (targetType === 'management') return '管理页面';
+    return '机房';
   }
 
   getStatusText(status) {
@@ -313,8 +321,13 @@
   }
 
   logout() {
+    if (window.ApiClient && typeof window.ApiClient.logout === 'function') {
+      window.ApiClient.logout();
+      return;
+    }
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    localStorage.removeItem('swpuUser');
     window.location.href = 'login.html';
   }
 }

@@ -38,6 +38,10 @@ class AdminSystem {
             return;
         }
         if (swpuUser.role !== 'admin') {
+            if (window.ApiClient) {
+                window.ApiClient.navigate('index.html');
+                return;
+            }
             window.location.href = 'index.html';
             return;
         }
@@ -1055,6 +1059,10 @@ class AdminSystem {
                 const item = items[Number(button.dataset.messageIndex)];
                 this.toggleMessageCenter(false);
                 if (item?.targetUrl) {
+                    if (window.ApiClient) {
+                        window.ApiClient.navigate(item.targetUrl);
+                        return;
+                    }
                     window.location.href = item.targetUrl;
                     return;
                 }
@@ -2253,11 +2261,11 @@ class AdminSystem {
     }
 
     logout() {
-        window.SWPUData.clearCurrentSwpuUser();
         if (window.ApiClient && typeof window.ApiClient.logout === 'function') {
             window.ApiClient.logout();
             return;
         }
+        window.SWPUData.clearCurrentSwpuUser();
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = 'login.html';

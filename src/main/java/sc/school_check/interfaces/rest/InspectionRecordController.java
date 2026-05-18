@@ -1,7 +1,7 @@
 package sc.school_check.interfaces.rest;
 
-import lombok.RequiredArgsConstructor;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,11 +13,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import sc.school_check.application.service.InspectionEventPublisher;
+import sc.school_check.application.service.InspectionRecordService;
+import sc.school_check.application.service.UserService;
 import sc.school_check.domain.model.InspectionRecord;
 import sc.school_check.domain.model.User;
 import sc.school_check.shared.exception.BusinessException;
-import sc.school_check.application.service.InspectionRecordService;
-import sc.school_check.application.service.UserService;
 import sc.school_check.shared.util.FileUtil;
 import sc.school_check.shared.util.ResponseUtil;
 
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/inspection")
 public class InspectionRecordController {
     private final InspectionRecordService inspectionRecordService;
+    private final InspectionEventPublisher inspectionEventPublisher;
     private final FileUtil fileUtil;
     private final UserService userService;
 
@@ -44,7 +46,8 @@ public class InspectionRecordController {
             @RequestParam(required = false) Long roomId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate inspectionDate,
             @RequestParam(required = false, defaultValue = "false") Boolean today) {
-        IPage<InspectionRecord> inspectionPage = inspectionRecordService.getInspectionPage(pageNum, pageSize, roomId, inspectionDate, today);
+        IPage<InspectionRecord> inspectionPage =
+                inspectionRecordService.getInspectionPage(pageNum, pageSize, roomId, inspectionDate, today);
         fillDisplayName(inspectionPage.getRecords());
         return ResponseUtil.success(inspectionPage);
     }
@@ -53,19 +56,10 @@ public class InspectionRecordController {
     public ResponseUtil<?> addInspection(
             @RequestPart("inspection") InspectionRecord inspection,
             @RequestPart(value = "images", required = false) List<MultipartFile> images) {
-        if (inspection.getRoomId() == null) {
-            throw new BusinessException(400, "机房 ID 不能为空");
-        }
-        if (inspection.getUserId() == null) {
-            throw new BusinessException(400, "巡检人 ID 不能为空");
-        }
-        if (inspection.getStatus() == null || inspection.getStatus().isEmpty()) {
-            throw new BusinessException(400, "巡检状态不能为空");
-        }
+        validateInspectionPayload(inspection);
 
         if (images != null && !images.isEmpty()) {
-            String imageUrls = fileUtil.uploadFiles(images);
-            inspection.setImages(imageUrls);
+            inspection.setImages(fileUtil.uploadFiles(images));
         }
 
         Date now = new Date();
@@ -82,6 +76,7 @@ public class InspectionRecordController {
 
         if (inspectionRecordService.save(inspection)) {
             inspectionRecordService.updateRoomStatus(inspection.getRoomId(), inspection.getStatus());
+            inspectionEventPublisher.publishInspectionCreated(inspection);
             return ResponseUtil.success("巡检记录提交成功");
         }
         throw new BusinessException(500, "巡检记录提交失败");
@@ -92,15 +87,17 @@ public class InspectionRecordController {
         if (inspection.getId() == null) {
             throw new BusinessException(400, "巡检记录 ID 不能为空");
         }
+
         InspectionRecord existing = inspectionRecordService.getById(inspection.getId());
         if (existing == null) {
             throw new BusinessException(404, "巡检记录不存在");
         }
+
         if (inspection.getInspectionTime() != null) {
             existing.setInspectionTime(inspection.getInspectionTime());
             existing.setInspectTime(inspection.getInspectionTime());
         }
-        if (inspection.getStatus() != null && !inspection.getStatus().isEmpty()) {
+        if (inspection.getStatus() != null && !inspection.getStatus().isBlank()) {
             existing.setStatus(inspection.getStatus());
         }
         if (inspection.getNotes() != null) {
@@ -115,8 +112,10 @@ public class InspectionRecordController {
         if (inspection.getRoomName() != null) {
             existing.setRoomName(inspection.getRoomName());
         }
+
         if (inspectionRecordService.updateById(existing)) {
             inspectionRecordService.updateRoomStatus(existing.getRoomId(), existing.getStatus());
+            inspectionEventPublisher.publishInspectionUpdated(existing);
             return ResponseUtil.success("巡检记录更新成功");
         }
         throw new BusinessException(500, "巡检记录更新失败");
@@ -130,6 +129,18 @@ public class InspectionRecordController {
         }
         fillDisplayName(List.of(inspection));
         return ResponseUtil.success(inspection);
+    }
+
+    private void validateInspectionPayload(InspectionRecord inspection) {
+        if (inspection.getRoomId() == null) {
+            throw new BusinessException(400, "机房 ID 不能为空");
+        }
+        if (inspection.getUserId() == null) {
+            throw new BusinessException(400, "巡检人 ID 不能为空");
+        }
+        if (inspection.getStatus() == null || inspection.getStatus().isBlank()) {
+            throw new BusinessException(400, "巡检状态不能为空");
+        }
     }
 
     private void fillDisplayName(List<InspectionRecord> records) {

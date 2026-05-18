@@ -151,6 +151,17 @@
         }
     }
 
+    function loadServerBackedData(key, fallbackValue) {
+        const targetKey = STORAGE_KEYS[key] || key;
+        if (databaseSnapshot && Object.prototype.hasOwnProperty.call(databaseSnapshot, targetKey)) {
+            const databaseValue = databaseSnapshot[targetKey];
+            hydrateNcicRecord(targetKey, databaseValue);
+            hydratedDatabaseKeys.add(targetKey);
+            return clone(databaseValue);
+        }
+        return fetchSwpuData(key, fallbackValue);
+    }
+
     function getTodayDate() {
         return new Date().toLocaleDateString('sv-SE');
     }
@@ -530,10 +541,10 @@
     }
 
     function seedData() {
-        const swpuUsers = normalizeSwpuUsers(fetchSwpuData('swpuUsers', createDefaultSwpuUsers));
-        const ncicRooms = mergeDefaults(fetchSwpuData('ncicRooms', createDefaultNcicRooms), createDefaultNcicRooms());
-        const rawDevices = fetchSwpuData('devices', createDefaultDevices);
-        const rawManagementPages = fetchSwpuData('managementPages', createDefaultManagementPages);
+        const swpuUsers = normalizeSwpuUsers(loadServerBackedData('swpuUsers', createDefaultSwpuUsers));
+        const ncicRooms = mergeDefaults(loadServerBackedData('ncicRooms', createDefaultNcicRooms), createDefaultNcicRooms());
+        const rawDevices = loadServerBackedData('devices', createDefaultDevices);
+        const rawManagementPages = loadServerBackedData('managementPages', createDefaultManagementPages);
         const deviceCatalogMigrated = localStorage.getItem('devicesCatalogSeedV2') === 'done';
         const devices = (deviceCatalogMigrated ? rawDevices : mergeDefaults(rawDevices, createDefaultDevices())).map(normalizeDevice);
         const managementPages = mergeDefaults(rawManagementPages, createDefaultManagementPages()).map(normalizeManagementPage);
@@ -542,12 +553,12 @@
         persistNcicRecord('devices', devices);
         persistNcicRecord('managementPages', managementPages);
         localStorage.setItem('devicesCatalogSeedV2', 'done');
-        fetchSwpuData('documents', createDefaultDocuments);
-        fetchSwpuData('dailyPatrolRecords', () => ({}));
-        fetchSwpuData('devicePatrolRecords', () => ({}));
-        fetchSwpuData('managementPatrolRecords', () => ({}));
-        fetchSwpuData('ncicDutyList', createDefaultDutyList);
-        fetchSwpuData('dutyLog', () => []);
+        persistNcicRecord('documents', mergeDefaults(loadServerBackedData('documents', createDefaultDocuments), createDefaultDocuments()).map(normalizeDocument));
+        persistNcicRecord('dailyPatrolRecords', loadServerBackedData('dailyPatrolRecords', () => ({})));
+        persistNcicRecord('devicePatrolRecords', loadServerBackedData('devicePatrolRecords', () => ({})));
+        persistNcicRecord('managementPatrolRecords', loadServerBackedData('managementPatrolRecords', () => ({})));
+        persistNcicRecord('ncicDutyList', loadServerBackedData('ncicDutyList', createDefaultDutyList));
+        persistNcicRecord('dutyLog', loadServerBackedData('dutyLog', () => []));
         fetchSwpuData('knowledgeBase', createDefaultKnowledgeBase);
     }
 
@@ -568,14 +579,6 @@
     }
 
     function clearCurrentSwpuUser() {
-        const token = localStorage.getItem('token') || '';
-        if (token && window.fetch) {
-            fetch('/api/auth/logout', {
-                method: 'POST',
-                headers: { Authorization: token.startsWith('Bearer ') ? token : `Bearer ${token}` },
-                keepalive: true
-            }).catch(() => {});
-        }
         localStorage.removeItem(STORAGE_KEYS.swpuUser);
         localStorage.removeItem('user');
         localStorage.removeItem('token');

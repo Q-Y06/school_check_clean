@@ -22,6 +22,7 @@ public class NcicDataInitializer implements ApplicationRunner {
     public void run(ApplicationArguments args) {
         createTables();
         ensureDocumentSchema();
+        ensurePatrolRecordSchema();
         seedDocumentUrls();
         seedData();
     }
@@ -95,12 +96,16 @@ public class NcicDataInitializer implements ApplicationRunner {
                     rich_content MEDIUMTEXT,
                     images MEDIUMTEXT,
                     inspector VARCHAR(100),
+                    inspector_id BIGINT,
+                    inspector_username VARCHAR(64),
                     patrol_date DATE,
                     patrol_time DATETIME,
                     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
                     update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                     INDEX idx_ncic_patrol_target (target_type, target_id),
-                    INDEX idx_ncic_patrol_time (patrol_time)
+                    INDEX idx_ncic_patrol_time (patrol_time),
+                    INDEX idx_ncic_patrol_inspector_id (inspector_id),
+                    INDEX idx_ncic_patrol_inspector_username (inspector_username)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
                 """);
         jdbcTemplate.execute("""
@@ -135,6 +140,29 @@ public class NcicDataInitializer implements ApplicationRunner {
             jdbcTemplate.execute("ALTER TABLE ncic_document ADD COLUMN url VARCHAR(255) NULL AFTER title");
         } catch (Exception ignored) {
             // Column already exists on upgraded databases.
+        }
+    }
+
+    private void ensurePatrolRecordSchema() {
+        try {
+            jdbcTemplate.execute("ALTER TABLE ncic_patrol_record ADD COLUMN inspector_id BIGINT NULL AFTER inspector");
+        } catch (Exception ignored) {
+            // Column already exists on upgraded databases.
+        }
+        try {
+            jdbcTemplate.execute("ALTER TABLE ncic_patrol_record ADD COLUMN inspector_username VARCHAR(64) NULL AFTER inspector_id");
+        } catch (Exception ignored) {
+            // Column already exists on upgraded databases.
+        }
+        try {
+            jdbcTemplate.execute("CREATE INDEX idx_ncic_patrol_inspector_id ON ncic_patrol_record (inspector_id)");
+        } catch (Exception ignored) {
+            // Index already exists on upgraded databases.
+        }
+        try {
+            jdbcTemplate.execute("CREATE INDEX idx_ncic_patrol_inspector_username ON ncic_patrol_record (inspector_username)");
+        } catch (Exception ignored) {
+            // Index already exists on upgraded databases.
         }
     }
 

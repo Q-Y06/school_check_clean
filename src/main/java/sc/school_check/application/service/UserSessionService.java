@@ -8,5 +8,7 @@ public interface UserSessionService {
 
     boolean isTokenActive(String username, String token);
 
+    boolean touchSession(String username, String token);
+
     void logout(String username, String token);
 }
